@@ -20,3 +20,20 @@ Para Poder jugar una partida personalizada.
 
 
 ![imagen](https://github.com/user-attachments/assets/0d8d6df9-8a0c-44a1-929f-07a0bc5aea46)
+
+Como jugador,
+Quiero poder iniciar un partida
+Para empezar a jugar.
+
+
+  1. El jugador puede seleccionar "Iniciar partida" desde el menú principal y lo redirige a la vista de seleccionar las configuraciones.
+  2. El juego carga la partida con las respectivas configuraciones que se escogieron.
+  3. El jugador puede empezar a realizar todas las acciones de juego una vez iniciado el juego.
+  4. La partida se inicia de manera correcta con todos los jugadores que se configuraron inicialmente.
+
+
+![imagen](https://github.com/user-attachments/assets/a5fb87ef-bdc4-480c-8be6-6992baa1a691)
+![imagen](https://github.com/user-attachments/assets/511b800f-17b6-473a-903a-ba238fedd0c3)
+
+
+
