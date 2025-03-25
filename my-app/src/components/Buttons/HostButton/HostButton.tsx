@@ -1,15 +1,22 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./HostButton.css";
 
-// Define el tipo de las props
 interface RetroButtonProps {
-  onClick: () => void; // onClick es una función que no recibe parámetros y no devuelve nada
+  onClick?: () => void;
 }
 
 const RetroButton: React.FC<RetroButtonProps> = ({ onClick }) => {
+  const navigate = useNavigate();
+
+  const handleHostClick = () => {
+    if (onClick) onClick();
+    navigate("/hostconfig"); 
+  };
+
   return (
     <div className="button-container-host">
-      <button className="retro-button-host" onClick={onClick}>
+      <button className="retro-button-host" onClick={handleHostClick}>
         Host
       </button>
     </div>
