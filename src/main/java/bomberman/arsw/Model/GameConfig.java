@@ -40,4 +40,16 @@ public class GameConfig
     public int getVidas() { return vidas; }
     public void setVidas(int vidas) { this.vidas = vidas; }
 
+    public int getPlayerCount()
+    {
+        return jugadores;
+    }
+
+    public int getMapaAlto() {
+        return 15;
+    }
+
+    public int getMapaAncho() {
+        return 15;
+    }
 }

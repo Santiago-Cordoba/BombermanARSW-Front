@@ -11,6 +11,7 @@ bomberman\arsw\Model\Cell.class
 bomberman\arsw\Model\Game.class
 bomberman\arsw\Model\Explosion.class
 bomberman\arsw\Model\Map.class
+bomberman\arsw\Model\MapPanel.class
 bomberman\arsw\controller\GameController.class
 bomberman\arsw\Model\GameConfig.class
 bomberman\arsw\Model\PowerUp.class
