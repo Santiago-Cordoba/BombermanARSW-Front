@@ -57,19 +57,28 @@ function drawMap(mapString) {
     canvas.width = cols * cellSize;
     canvas.height = rows.length * cellSize;
 
-    for (let y = 0; y < rows.length; y++) {
-        for (let x = 0; x < cols; x++) {
-            if (rows[y][x] === "#") {
-                ctx.fillStyle = "black"; // Pared
-            } else if (rows[y][x] === "P") {
-                ctx.fillStyle = "red"; // Jugador
-            } else {
-                ctx.fillStyle = "white"; // Espacio vacío
+    // Cargar imágenes
+    const wallImage = new Image();
+    wallImage.src = "/img/muro.png";
+    const playerImage = new Image();
+    playerImage.src = "/img/player.png";
+
+    wallImage.onload = playerImage.onload = function () {
+        for (let y = 0; y < rows.length; y++) {
+            for (let x = 0; x < cols; x++) {
+                if (rows[y][x] === "#") {
+                    ctx.drawImage(wallImage, x * cellSize, y * cellSize, cellSize, cellSize);
+                } else if (rows[y][x] === "P") {
+                    ctx.drawImage(playerImage, x * cellSize, y * cellSize, cellSize, cellSize);
+                } else {
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                }
             }
-            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
         }
-    }
+    };
 }
+
 
 // Cargar el mapa cuando se abra `game.html`
 window.onload = loadGameMap;
