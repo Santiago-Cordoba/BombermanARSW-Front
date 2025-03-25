@@ -77,6 +77,9 @@ function drawMap(mapString) {
     canvas.width = cols * cellSize;
     canvas.height = rows.length * cellSize;
 
+    // Hacer el fondo del canvas transparente
+    canvas.style.backgroundColor = "transparent";
+
     const wallImage = new Image();
     wallImage.src = "/img/muro.png";
     const playerImage = new Image();
@@ -91,13 +94,19 @@ function drawMap(mapString) {
                     ctx.drawImage(wallImage, x * cellSize, y * cellSize, cellSize, cellSize);
                 } else if (rows[y][x] === "P") {
                     ctx.drawImage(playerImage, x * cellSize, y * cellSize, cellSize, cellSize);
-                } else {
-                    ctx.fillStyle = "white";
-                    ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
                 }
+
+                // Dibujar líneas de la cuadrícula
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)"; // Color de las líneas
+                ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
     };
+
+
+
+
+
 }
 
 // Cargar el mapa cuando se abra `game.html`
