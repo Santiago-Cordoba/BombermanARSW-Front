@@ -3,7 +3,6 @@ package bomberman.arsw.controller;
 import bomberman.arsw.Model.Game;
 import bomberman.arsw.Model.GameConfig;
 import bomberman.arsw.service.GameService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,9 +13,22 @@ import java.util.logging.Logger;
 public class GameController {
 
     private static final Logger logger = Logger.getLogger(GameController.class.getName());
+    private final GameService gameService;
 
-    @Autowired
-    private GameService gameService;
+    public GameController(GameService gameService) {
+        this.gameService = gameService;
+    }
+
+    @PostMapping("/move")
+    public ResponseEntity<String> movePlayer(@RequestParam String direction) {
+        Game game = gameService.getCurrentGame();
+        if (game == null) {
+            return ResponseEntity.status(404).body("No hay una partida en curso.");
+        }
+
+        game.movePlayer(direction);
+        return ResponseEntity.ok(game.getMapAsString());  // Devuelve el nuevo estado del mapa
+    }
 
     @PostMapping("/start")
     public ResponseEntity<String> startGame(@RequestBody GameConfig config) {
@@ -26,15 +38,6 @@ public class GameController {
         } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
-    }
-
-    @GetMapping
-    public ResponseEntity<Game> getCurrentGame() {
-        Game game = gameService.getCurrentGame();
-        if (game == null) {
-            return ResponseEntity.status(404).build();
-        }
-        return ResponseEntity.ok(game);
     }
 
     @GetMapping("/status")
