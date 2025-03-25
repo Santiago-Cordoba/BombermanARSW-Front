@@ -35,7 +35,8 @@ Para empezar a jugar.
 ![imagen](https://github.com/user-attachments/assets/a5fb87ef-bdc4-480c-8be6-6992baa1a691)
 ![imagen](https://github.com/user-attachments/assets/9bd868e8-864a-477a-bd6e-a51fabfae571)
 
-![imagen](https://github.com/user-attachments/assets/1ab5e859-3d88-4f95-bda4-112c5ad90a5a)
+![imagen](https://github.com/user-attachments/assets/bc06ca29-8b76-43ca-8876-14f58f259cbd)
+
 
 
 
