@@ -1,0 +1,36 @@
+/* hostPage.css */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Evita el desplazamiento si no es necesario */
+}
+
+/* Contenedor principal */
+.host-page-container {
+    background-color: black;
+    color: white;
+    min-height: 100vh; /* Usa min-height para que ocupe toda la altura */
+    width: 100vw; /* Asegura que ocupe todo el ancho */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Ajusta para que el contenido se alinee hacia la parte superior */
+    align-items: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* Estilo para el título */
+h1 {
+    font-size: 2em;
+    margin-top: 150px; /* Ajusta el margen superior para colocar el título más arriba */
+    margin-bottom: 20px; /* Ajusta el margen inferior para el espacio entre el título y los botones */
+}
+
+/* Contenedor de botones */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}

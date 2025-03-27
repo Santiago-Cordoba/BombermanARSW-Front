@@ -1,0 +1,33 @@
+/* Contenedor del botón */
+.button-container-guest {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  /* Estilos del botón retro */
+  .retro-button-guest {
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    color: #ffcc00; /* Color del texto (amarillo neón) */
+    background-color: #000000; /* Color de fondo del botón (negro) */
+    border: 2px solid #ffcc00; /* Borde brillante (amarillo neón) */
+    box-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00; /* Efecto de brillo amarillo */
+    text-shadow: 2px 2px 4px rgba(255, 204, 0, 0.7); /* Sombra del texto en amarillo */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 1px;
+  }
+  
+  /* Efecto hover */
+  .retro-button-guest:hover {
+    background-color: #111111; /* Cambia el fondo a un negro más claro al hacer hover */
+    box-shadow: 0 0 15px #ffcc00, 0 0 30px #ffcc00; /* Aumenta el brillo amarillo */
+    transform: scale(1.05); /* Escala ligeramente el botón */
+  }
+  
+  /* Efecto activo (al hacer clic) */
+  .retro-button-guest:active {
+    transform: scale(0.95); /* Reduce el tamaño del botón al hacer clic */
+  }
