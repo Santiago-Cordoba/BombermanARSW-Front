@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import HUD from "../Hud/Hud";
 import { PlayerController } from "../PlayerMovement";
 import { SoundPlayer } from "../SoundBomb";
+import { WallManager } from "../wall";
 import playerImage from '../../images/Player.png';
 import bombImage from '../../images/bomb.png';
 import boomSound from '../../assets/sounds/boom2.mp3';
@@ -153,13 +154,24 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
         onPositionChange={setPlayerPosition}
         onPlaceBomb={placeBomb}
       >
-        <div className="game-board">
-          {board.map((row, rowIndex) => (
-            <div className="board-row" key={rowIndex}>
-              {row.map((cell, colIndex) => renderCell(cell, rowIndex, colIndex))}
+        <WallManager 
+          size={size} 
+          center={{ row: center, col: center }} 
+          blocks={config.blocks || 0} // Asegúrate que blocks viene de config
+        >
+          {(renderWall) => (
+            <div className="game-board">
+              {board.map((row, rowIndex) => (
+                <div className="board-row" key={rowIndex}>
+                  {row.map((cell, colIndex) => {
+                    const wallElement = renderWall(rowIndex, colIndex);
+                    return wallElement || renderCell(cell, rowIndex, colIndex);
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </WallManager>
       </PlayerController>
     </div>
   );

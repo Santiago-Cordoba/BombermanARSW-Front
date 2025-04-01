@@ -37,7 +37,7 @@ export function PlayerController({
         case 's': movePlayer(row + 1, col); break;
         case 'a': movePlayer(row, col - 1); break;
         case 'd': movePlayer(row, col + 1); break;
-        case 'f': onPlaceBomb(); break; // Solo llama a onPlaceBomb
+        case 'f': onPlaceBomb(); break; 
         default: break;
       }
     };
