@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import HostPage from './pages/Host/hostPage'; // Ruta para la página del host
+import HostPage from './pages/Host/hostPage'; 
 import HomePage from "./pages/Home/Home";
+import HostConfig from './pages/HostConfig/HostConfig';
+import GamePage from './pages/GamePage/GamePage';
 
 function App() {
   return (
@@ -8,6 +10,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/host" element={<HostPage />} />
+        <Route path="/hostconfig" element={<HostConfig />} />
+        <Route path="/game" element={<GamePage />} />
       </Routes>
     </Router>
   );

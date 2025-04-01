@@ -1,0 +1,52 @@
+.game-board {
+  background-color: black !important;
+  grid-template-columns: repeat(13, 40px);
+  grid-template-rows: repeat(13, 40px);
+}
+
+.empty-cell {
+  background-color: black !important;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil para las celdas vacías */
+}
+
+.solid-block {
+  background-color: #222 !important; /* Color oscuro para los bloques */
+  border: 1px solid #444; /* Borde más visible para los bloques */
+}
+
+.player {
+  background-image: url('../../images/Player.png');
+  background-size: 80% 80%; /* Ajusta esto según necesites */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-color: transparent !important; /* Fondo transparente */
+  border: none !important; /* Elimina cualquier borde */
+  box-shadow: none !important; /* Elimina sombras */
+  animation: pulse 1.5s infinite alternate;
+}
+
+/* Elimina cualquier pseudo-elemento que pueda estar causando el fondo naranja */
+.player::before, .player::after {
+  content: none !important;
+}
+
+@keyframes pulse {
+  from { 
+    transform: scale(0.95); 
+    opacity: 0.9;
+  }
+  to { 
+    transform: scale(1.05); 
+    opacity: 1;
+  }
+}
+
+.bomb {
+  background-color: transparent;
+  animation: pulseBomb 0.5s infinite alternate;
+}
+
+@keyframes pulseBomb {
+  from { transform: scale(0.9); opacity: 0.8; }
+  to { transform: scale(1.1); opacity: 1; }
+}
