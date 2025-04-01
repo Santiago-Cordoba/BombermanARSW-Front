@@ -1,4 +1,4 @@
-import React, {useMemo } from 'react';
+import React, { useMemo } from 'react';
 import wallImage from '../images/wall.png';
 
 interface Position {
@@ -10,7 +10,7 @@ interface WallManagerProps {
   size: number;
   center: Position;
   blocks?: number;
-  children: (renderWall: (row: number, col: number) => React.ReactNode) => React.ReactNode;
+  children: (renderWall: (row: number, col: number) => React.ReactNode, walls: Position[]) => React.ReactNode;
 }
 
 export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks = 0, children }) => {
@@ -36,7 +36,7 @@ export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks =
     }
 
     return newWalls;
-  }, []); 
+  }, [size, center.row, center.col, blocks]);
 
   const renderWall = (row: number, col: number) => {
     const isWall = walls.some(wall => wall.row === row && wall.col === col);
@@ -56,5 +56,5 @@ export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks =
     ) : null;
   };
 
-  return <>{children(renderWall)}</>;
+  return <>{children(renderWall, walls)}</>;
 };

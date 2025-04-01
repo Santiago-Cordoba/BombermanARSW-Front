@@ -9,7 +9,7 @@ interface SoundPlayerProps {
 
 export const SoundPlayer = ({
   soundFile,
-  volume = 0.7,
+  volume = 0.4,
   children,
   playCondition
 }: SoundPlayerProps) => {

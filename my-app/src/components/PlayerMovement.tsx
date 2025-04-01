@@ -1,10 +1,17 @@
 import { ReactNode, useEffect, useState } from 'react';
 
+interface Position {
+  row: number;
+  col: number;
+}
+
 interface PlayerControllerProps {
-  initialPosition: { row: number; col: number };
+  initialPosition: Position;
   boardSize: number;
-  onPositionChange: (newPosition: { row: number; col: number }) => void;
+  onPositionChange: (newPosition: Position) => void;
   onPlaceBomb: () => void;
+  walls: Position[];
+  bombs: Position[];
   children?: ReactNode;
 }
 
@@ -13,12 +20,24 @@ export function PlayerController({
   boardSize,
   onPositionChange,
   onPlaceBomb,
+  walls,
+  bombs,
   children
 }: PlayerControllerProps) {
   const [position, setPosition] = useState(initialPosition);
 
   const movePlayer = (newRow: number, newCol: number) => {
-    if (newRow <= 0 || newRow >= boardSize - 1 || newCol <= 0 || newCol >= boardSize - 1) {
+    if (newRow < 0 || newRow >= boardSize || newCol < 0 || newCol >= boardSize) {
+      return;
+    }
+    
+    const isWall = walls.some(wall => wall.row === newRow && wall.col === newCol);
+    if (isWall) {
+      return;
+    }
+
+    const isBomb = bombs.some(bomb => bomb.row === newRow && bomb.col === newCol);
+    if (isBomb) {
       return;
     }
 
@@ -44,7 +63,7 @@ export function PlayerController({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [position, onPlaceBomb]);
+  }, [position, onPlaceBomb, bombs]);
 
   return <>{children}</>;
 }

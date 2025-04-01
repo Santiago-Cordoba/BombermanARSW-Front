@@ -1,31 +1,30 @@
 .game-board {
-  background-color: black !important;
+  background-color: rgb(7, 211, 116) !important;
   grid-template-columns: repeat(13, 40px);
   grid-template-rows: repeat(13, 40px);
 }
 
 .empty-cell {
-  background-color: black !important;
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Borde sutil para las celdas vacías */
+  background-color: rgb(7, 211, 116) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1); 
 }
 
 .solid-block {
-  background-color: #222 !important; /* Color oscuro para los bloques */
-  border: 1px solid #444; /* Borde más visible para los bloques */
+  background-color: #222 !important; 
+  border: 1px solid #444; 
 }
 
 .player {
   background-image: url('../../images/Player.png');
-  background-size: 80% 80%; /* Ajusta esto según necesites */
+  background-size: 80% 80%; 
   background-repeat: no-repeat;
   background-position: center;
-  background-color: transparent !important; /* Fondo transparente */
-  border: none !important; /* Elimina cualquier borde */
-  box-shadow: none !important; /* Elimina sombras */
+  background-color: transparent !important; 
+  border: none !important; 
+  box-shadow: none !important; 
   animation: pulse 1.5s infinite alternate;
 }
 
-/* Elimina cualquier pseudo-elemento que pueda estar causando el fondo naranja */
 .player::before, .player::after {
   content: none !important;
 }
@@ -49,4 +48,191 @@
 @keyframes pulseBomb {
   from { transform: scale(0.9); opacity: 0.8; }
   to { transform: scale(1.1); opacity: 1; }
+}
+
+.powerup {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Explosion effect */
+.explosion {
+  background-color: #ff5722;
+  background-image: radial-gradient(#ffeb3b, #ff5722);
+  animation: explosion-anim 0.5s ease-out;
+  z-index: 1;
+}
+
+@keyframes explosion-anim {
+  0% { transform: scale(0); opacity: 1; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.player-hit {
+  animation: hit-anim 0.5s;
+}
+
+@keyframes hit-anim {
+  0% { filter: brightness(2) hue-rotate(0deg); }
+  50% { filter: brightness(0.5) hue-rotate(60deg); }
+  100% { filter: brightness(1) hue-rotate(0deg); }
+}
+
+.wall-destroyed {
+  animation: wall-destroy-anim 0.3s forwards;
+}
+
+@keyframes wall-destroy-anim {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.retro-game-over-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.retro-game-over-content {
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 4px solid #ffeb3b;
+  border-radius: 8px;
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+  color: white;
+  text-align: center;
+  box-shadow: 0 0 20px #ff5722;
+  position: relative;
+  overflow: hidden;
+}
+
+.retro-game-over-content::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 10px 10px;
+  pointer-events: none;
+}
+
+.retro-game-over-title {
+  color: #ffeb3b;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 0 #ff5722;
+  font-family: 'Press Start 2P', cursive;
+}
+
+.retro-game-over-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.retro-game-over-button {
+  padding: 10px 15px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #4CAF50;
+  color: white;
+  flex: 1;
+  max-width: 150px;
+}
+
+.retro-game-over-button.secondary {
+  background-color: #f44336;
+}
+
+.retro-game-over-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.retro-game-over-content::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  animation: scanline 6s linear infinite;
+  pointer-events: none;
+}
+
+.game-lost {
+  color: #ff3d3d !important;
+  text-shadow: 2px 2px 0 #8b0000 !important;
+  animation: pulse 0.8s infinite alternate;
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+
+.game-lost::before,
+.game-lost::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.9);
+  clip: rect(0, 0, 0, 0);
+}
+
+.game-lost::before {
+  left: -2px;
+  text-shadow: 2px 0 #ff0000;
+  animation: glitch-anim 2s infinite linear alternate-reverse;
+}
+
+.game-lost::after {
+  left: 2px;
+  text-shadow: -2px 0 #00ffff;
+  animation: glitch-anim 1s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim {
+  0% { clip: rect(30px, 9999px, 20px, 0); }
+  20% { clip: rect(10px, 9999px, 80px, 0); }
+  40% { clip: rect(50px, 9999px, 60px, 0); }
+  60% { clip: rect(40px, 9999px, 70px, 0); }
+  80% { clip: rect(60px, 9999px, 30px, 0); }
+  100% { clip: rect(80px, 9999px, 20px, 0); }
 }

@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import HUD from "../Hud/Hud";
 import { PlayerController } from "../PlayerMovement";
 import { SoundPlayer } from "../SoundBomb";
 import { WallManager } from "../wall";
+import { BombManager } from "../bomb";
 import playerImage from '../../images/Player.png';
-import bombImage from '../../images/bomb.png';
 import boomSound from '../../assets/sounds/boom2.mp3';
 import "./Board.css";
 import "../Hud/Hud.css";
+import { PowerUpManager } from "../powerupLife";
+
+interface Position {
+  row: number;
+  col: number;
+}
 
 interface BoardProps {
   config?: {
@@ -18,16 +24,20 @@ interface BoardProps {
   };
 }
 
-type CellType = '0' | '1' | 'P' | 'B' | 'X';
+type CellType = '0' | '1' | 'P' | 'X';
 
 const Board: React.FC<BoardProps> = ({ config = {} }) => {
   const size = 13;
   const center = Math.floor(size / 2);
   const initialTimeInSeconds = (config.duration || 2) * 60;
   const [shouldPlayBoomSound, setShouldPlayBoomSound] = useState(false);
+  const damageCooldownRef = useRef(false);
+  const explosionIdRef = useRef(0);
+
+  const maxLives = config.lives !== undefined ? config.lives : 3;
 
   const [gameState, setGameState] = useState({
-    lives: config.lives || 3,
+    lives: maxLives,
     timeLeftInSeconds: initialTimeInSeconds,
     playersLeft: config.players || 1,
     score: 0
@@ -38,56 +48,111 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
     col: center
   });
 
-  const [bombs, setBombs] = useState<Array<{position: {row: number, col: number}, timer: number}>>([]);
-  const [explosions, setExplosions] = useState<Array<{row: number, col: number}>>([]);
+  const [gameOver, setGameOver] = useState({
+    isOver: false,
+    message: ''
+  });
 
-  const handleBombPlaced = () => {
-    setShouldPlayBoomSound(true);
-    setTimeout(() => setShouldPlayBoomSound(false), 100);
-  };
+  const [explosions, setExplosions] = useState<Position[]>([]);
 
   useEffect(() => {
+    if (gameState.lives <= 0 && !gameOver.isOver) {
+      setGameOver({
+        isOver: true,
+        message: '¡HAS PERDIDO!'
+      });
+    }
+  }, [gameState.lives]);
+  
+  useEffect(() => {
     const timer = setInterval(() => {
-      setGameState(prev => ({
-        ...prev,
-        timeLeftInSeconds: prev.timeLeftInSeconds > 0 ? prev.timeLeftInSeconds - 1 : 0
-      }));
-
-      setBombs(prev => {
-        const updatedBombs = prev.map(bomb => ({
-          ...bomb,
-          timer: bomb.timer - 1
-        }));
+      setGameState(prev => {
+        const newTime = prev.timeLeftInSeconds - 1;
         
-        const bombsToExplode = updatedBombs.filter(bomb => bomb.timer <= 0);
-        
-        if (bombsToExplode.length > 0) {
-          setExplosions(bombsToExplode.map(bomb => bomb.position));
+        if (newTime <= 0) {
+          clearInterval(timer);
+          
+          if (prev.playersLeft > 1) {
+            setGameOver({
+              isOver: true,
+              message: '¡La partida ha quedado en empate!'
+            });
+          } else if (prev.playersLeft === 1) {
+            setGameOver({
+              isOver: true,
+              message: '¡Has ganado la partida!'
+            });
+          } else {
+            setGameOver({
+              isOver: true,
+              message: '¡Juego terminado!'
+            });
+          }
+          
+          return { ...prev, timeLeftInSeconds: 0 };
         }
         
-        return updatedBombs.filter(bomb => bomb.timer > 0);
+        return { ...prev, timeLeftInSeconds: newTime };
       });
     }, 1000);
 
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (explosions.length > 0) {
-      const timer = setTimeout(() => setExplosions([]), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [explosions]);
-
-  const placeBomb = () => {
-    setBombs(prev => [
-      ...prev,
-      {
-        position: { ...playerPosition },
-        timer: 3 
+  const handlePowerUpCollect = () => {
+    setGameState(prev => {
+      if (prev.lives < maxLives) {
+        return {
+          ...prev,
+          lives: prev.lives + 1
+        };
       }
-    ]);
-    handleBombPlaced();
+      return prev; 
+    });
+  };
+
+  const handleBombPlaced = () => {
+    setShouldPlayBoomSound(true);
+    setTimeout(() => setShouldPlayBoomSound(false), 100);
+  };
+
+  const handleBombExplode = (position: Position) => {
+    const explosionPositions = [
+      position,
+      { row: position.row - 1, col: position.col },  
+      { row: position.row + 1, col: position.col }, 
+      { row: position.row, col: position.col - 1 },  
+      { row: position.row, col: position.col + 1 }
+    ];
+    
+    explosionIdRef.current += 1;
+    const currentExplosionId = explosionIdRef.current;
+    
+    setExplosions(explosionPositions);
+    
+    if (!damageCooldownRef.current) {
+      const isPlayerInExplosion = explosionPositions.some(
+        exp => exp.row === playerPosition.row && exp.col === playerPosition.col
+      );
+      
+      if (isPlayerInExplosion) {
+        damageCooldownRef.current = true;
+        setGameState(prev => ({
+          ...prev,
+          lives: Math.max(0, prev.lives - 1)
+        }));
+        
+        setTimeout(() => {
+          damageCooldownRef.current = false;
+        }, 1000);
+      }
+    }
+    
+    setTimeout(() => {
+      if (explosionIdRef.current === currentExplosionId) {
+        setExplosions([]);
+      }
+    }, 500);
   };
 
   const generateBoard = (): CellType[][] => {
@@ -95,35 +160,26 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       return Array(size).fill(0).map((_, col): CellType => {
         if (row === 0 || row === size-1 || col === 0 || col === size-1) return '1';
         if (row === playerPosition.row && col === playerPosition.col) return 'P';
-        if (bombs.some(bomb => bomb.position.row === row && bomb.position.col === col)) return 'B';
         if (explosions.some(exp => exp.row === row && exp.col === col)) return 'X';
         return '0';
       });
     });
   };
 
-  const board = generateBoard();
-
   const renderCell = (cell: CellType, rowIndex: number, colIndex: number) => {
     const cellTypes = {
       '0': 'empty-cell',
       '1': 'solid-block',
       'P': 'player',
-      'B': 'bomb',
       'X': 'explosion'
-    };
-
-    const cellImages = {
-      'P': playerImage,
-      'B': bombImage
     };
 
     return (
       <div 
         className={`game-cell ${cellTypes[cell]}`}
         key={`${rowIndex}-${colIndex}`}
-        style={['P', 'B'].includes(cell) ? { 
-          backgroundImage: `url(${cellImages[cell as 'P' | 'B']})`,
+        style={cell === 'P' ? { 
+          backgroundImage: `url(${playerImage})`,
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
@@ -138,7 +194,7 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       <SoundPlayer 
         soundFile={boomSound}
         playCondition={shouldPlayBoomSound}
-        volume={0.8}
+        volume={0.4}
       />
       
       <HUD 
@@ -148,33 +204,78 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
         score={gameState.score}
       />
       
-      <PlayerController
-        initialPosition={{ row: center, col: center }}
-        boardSize={size}
-        onPositionChange={setPlayerPosition}
-        onPlaceBomb={placeBomb}
+      <WallManager 
+        size={size} 
+        center={{ row: center, col: center }} 
+        blocks={config.blocks || 0} 
       >
-        <WallManager 
-          size={size} 
-          center={{ row: center, col: center }} 
-          blocks={config.blocks || 0} // Asegúrate que blocks viene de config
-        >
-          {(renderWall) => (
-            <div className="game-board">
-              {board.map((row, rowIndex) => (
-                <div className="board-row" key={rowIndex}>
-                  {row.map((cell, colIndex) => {
-                    const wallElement = renderWall(rowIndex, colIndex);
-                    return wallElement || renderCell(cell, rowIndex, colIndex);
-                  })}
-                </div>
-              ))}
-            </div>
-          )}
-        </WallManager>
-      </PlayerController>
-    </div>
-  );
+        {(renderWall, walls) => (
+          <BombManager 
+            onBombPlaced={handleBombPlaced}
+            onBombExplode={handleBombExplode}
+          >
+            {(bombs, placeBomb, renderBomb) => (
+              <PowerUpManager
+                boardSize={size}
+                playerPosition={playerPosition}
+                maxLives={maxLives}
+                currentLives={gameState.lives}
+                onCollect={handlePowerUpCollect}
+              >
+                {(renderPowerUp) => (
+                  <PlayerController
+                    initialPosition={{ row: center, col: center }}
+                    boardSize={size}
+                    onPositionChange={setPlayerPosition}
+                    onPlaceBomb={() => placeBomb(playerPosition)}
+                    walls={walls}
+                    bombs={bombs}
+                  >
+                    <div className="game-board">
+                      {generateBoard().map((row, rowIndex) => (
+                        <div className="board-row" key={rowIndex}>
+                          {row.map((cell, colIndex) => {
+                            const wallElement = renderWall(rowIndex, colIndex);
+                            const bombElement = renderBomb(rowIndex, colIndex);
+                            const powerUpElement = renderPowerUp(rowIndex, colIndex);
+                            return wallElement || bombElement || powerUpElement || renderCell(cell, rowIndex, colIndex);
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </PlayerController>
+                )}
+              </PowerUpManager>
+            )}
+          </BombManager>
+        )}
+      </WallManager>
+
+      {gameOver.isOver && (
+      <div className="retro-game-over-card">
+        <div className="retro-game-over-content">
+        <h2 className={`retro-game-over-title ${gameState.lives <= 0 ? 'game-lost' : ''}`}>
+        {gameState.lives <= 0 ? '¡HAS PERDIDO!' : gameOver.message}
+        </h2>
+          <div className="retro-game-over-buttons">
+            <button 
+              className="retro-game-over-button"
+              onClick={() => window.location.reload()}
+            >
+              Jugar de nuevo
+            </button>
+            <button 
+              className="retro-game-over-button secondary"
+              onClick={() => {/* Lógica para menú principal */}}
+            >
+              Menú
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
 };
 
 function formatTime(seconds: number): string {

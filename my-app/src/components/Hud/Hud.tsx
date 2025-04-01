@@ -1,4 +1,3 @@
-
 import React from "react";
 
 interface HUDProps {
@@ -6,11 +5,12 @@ interface HUDProps {
   timeLeft: string;
   playersLeft: number;
   score?: number;
+  isHit?: boolean; 
 }
 
-const HUD: React.FC<HUDProps> = ({ lives, timeLeft, playersLeft }) => {
+const HUD: React.FC<HUDProps> = ({ lives, timeLeft, playersLeft, isHit }) => {
   return (
-    <div className="hud-container">
+    <div className={`hud-container ${isHit ? 'hud-hit' : ''}`}>
       <div className="hud-section">
         <span className="hud-icon">❤️</span>
         <span className="hud-value">{lives}</span>
