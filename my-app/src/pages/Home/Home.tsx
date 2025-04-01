@@ -1,28 +1,27 @@
-import { useState } from "react"; // Importa useState
-import { useNavigate } from "react-router-dom"; // Usa useNavigate en lugar de useHistory
+import { useState } from "react"; 
+import { useNavigate } from "react-router-dom"; 
 import fondo from "../../images/f1.png";
 import "../../styles/home.css";
 import RetroButton from "../../components/Buttons/RetroButton/RetroButton";
-import RetroNameInput from "../../components/Info/nameInput"; // Importa el componente RetroNameInput
+import RetroNameInput from "../../components/Info/nameInput"; 
 
 const HomePage = () => {
-  const [showNameInput, setShowNameInput] = useState(false); // Estado para controlar la visibilidad del formulario
-  const navigate = useNavigate(); // Usar useNavigate para redirigir a otra página
+  const [showNameInput, setShowNameInput] = useState(false); 
+  const navigate = useNavigate(); 
 
   const handleStartClick = () => {
-    setShowNameInput(true); // Mostrar el formulario al hacer clic en "Empezar"
+    setShowNameInput(true); 
   };
 
   const handleNameSubmit = () => {
-    navigate('/host'); // Redirigir a HostPage
+    navigate('/host'); 
   };
 
   return (
     <div className="homepage-container" style={{ backgroundImage: `url(${fondo})` }}>
-      {/* Contenedor para el botón o el formulario */}
       <div className="button-container">
         {showNameInput ? ( 
-          <RetroNameInput onSubmit={handleNameSubmit} /> // Pasa el handleNameSubmit como prop
+          <RetroNameInput onSubmit={handleNameSubmit} /> 
         ) : ( 
           <RetroButton onClick={handleStartClick} />
         )}
