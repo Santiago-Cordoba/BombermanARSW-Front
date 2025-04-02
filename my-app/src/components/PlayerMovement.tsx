@@ -27,6 +27,7 @@ export function PlayerController({
   const [position, setPosition] = useState(initialPosition);
 
   const movePlayer = (newRow: number, newCol: number) => {
+
     if (newRow < 0 || newRow >= boardSize || newCol < 0 || newCol >= boardSize) {
       return;
     }

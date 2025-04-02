@@ -63,7 +63,6 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       });
     }
   }, [gameState.lives]);
-  
   useEffect(() => {
     const timer = setInterval(() => {
       setGameState(prev => {
@@ -208,6 +207,7 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
         size={size} 
         center={{ row: center, col: center }} 
         blocks={config.blocks || 0} 
+        explosions={explosions}
       >
         {(renderWall, walls) => (
           <BombManager 

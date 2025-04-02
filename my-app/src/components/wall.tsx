@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import wallImage from '../images/wall.png';
 
 interface Position {
@@ -10,13 +10,19 @@ interface WallManagerProps {
   size: number;
   center: Position;
   blocks?: number;
+  explosions?: Position[]; 
   children: (renderWall: (row: number, col: number) => React.ReactNode, walls: Position[]) => React.ReactNode;
 }
 
-export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks = 0, children }) => {
-  const walls = useMemo(() => {
+export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks = 0, explosions = [], children }) => {
+  const [walls, setWalls] = useState<Position[]>([]);
+
+  useEffect(() => {
     const newWalls: Position[] = [];
-    if (blocks <= 0) return newWalls;
+    if (blocks <= 0) {
+      setWalls(newWalls);
+      return;
+    }
 
     const availablePositions: Position[] = [];
     
@@ -35,8 +41,19 @@ export const WallManager: React.FC<WallManagerProps> = ({ size, center, blocks =
       availablePositions.splice(randomIndex, 1);
     }
 
-    return newWalls;
+    setWalls(newWalls);
   }, [size, center.row, center.col, blocks]);
+
+  // Eliminar paredes alcanzadas por explosiones
+  useEffect(() => {
+    if (explosions.length > 0) {
+      setWalls(prevWalls => 
+        prevWalls.filter(wall => 
+          !explosions.some(exp => exp.row === wall.row && exp.col === wall.col)
+        )
+      );
+    }
+  }, [explosions]);
 
   const renderWall = (row: number, col: number) => {
     const isWall = walls.some(wall => wall.row === row && wall.col === col);
