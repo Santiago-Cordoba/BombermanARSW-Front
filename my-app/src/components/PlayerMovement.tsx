@@ -12,6 +12,7 @@ interface PlayerControllerProps {
   onPlaceBomb: () => void;
   walls: Position[];
   bombs: Position[];
+  otherPlayers: Position[];
   children?: ReactNode;
 }
 
@@ -22,12 +23,12 @@ export function PlayerController({
   onPlaceBomb,
   walls,
   bombs,
+  otherPlayers, 
   children
 }: PlayerControllerProps) {
   const [position, setPosition] = useState(initialPosition);
 
   const movePlayer = (newRow: number, newCol: number) => {
-
     if (newRow < 0 || newRow >= boardSize || newCol < 0 || newCol >= boardSize) {
       return;
     }
@@ -42,6 +43,12 @@ export function PlayerController({
       return;
     }
 
+    const isOtherPlayer = otherPlayers.some(
+      player => player.row === newRow && player.col === newCol
+    );
+    if (isOtherPlayer) {
+      return;
+    }
     const newPosition = { row: newRow, col: newCol };
     setPosition(newPosition);
     onPositionChange(newPosition);
@@ -64,7 +71,7 @@ export function PlayerController({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [position, onPlaceBomb, bombs]);
+  }, [position, onPlaceBomb, bombs, walls, otherPlayers]);
 
   return <>{children}</>;
 }

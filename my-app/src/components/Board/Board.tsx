@@ -15,6 +15,12 @@ interface Position {
   col: number;
 }
 
+interface Player {
+  id: number;
+  position: Position;
+  lives: number;
+}
+
 interface BoardProps {
   config?: {
     duration?: number;
@@ -24,7 +30,7 @@ interface BoardProps {
   };
 }
 
-type CellType = '0' | '1' | 'P' | 'X';
+type CellType = '0' | '1' | 'P' | 'O' | 'X';
 
 const Board: React.FC<BoardProps> = ({ config = {} }) => {
   const size = 13;
@@ -36,16 +42,36 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
 
   const maxLives = config.lives !== undefined ? config.lives : 3;
 
+  const [players, setPlayers] = useState<Player[]>(() => {
+    const initialPlayers: Player[] = [];
+    const playerCount = config.players || 1;
+    
+    const positions = [
+      { row: center, col: center },
+      { row: center - 2, col: center - 2 },
+      { row: center - 2, col: center + 2 },
+      { row: center + 2, col: center - 2 },
+    ];
+    
+    for (let i = 0; i < playerCount; i++) {
+      initialPlayers.push({
+        id: i,
+        position: positions[i],
+        lives: maxLives // Todos inician con maxLives
+      });
+    }
+    
+    return initialPlayers;
+  });
+
+  const mainPlayer = players[0];
+  const otherPlayers = players.slice(1);
+
   const [gameState, setGameState] = useState({
     lives: maxLives,
     timeLeftInSeconds: initialTimeInSeconds,
     playersLeft: config.players || 1,
     score: 0
-  });
-
-  const [playerPosition, setPlayerPosition] = useState({
-    row: center,
-    col: center
   });
 
   const [gameOver, setGameOver] = useState({
@@ -56,13 +82,28 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
   const [explosions, setExplosions] = useState<Position[]>([]);
 
   useEffect(() => {
-    if (gameState.lives <= 0 && !gameOver.isOver) {
+    const alivePlayers = players.filter(p => p.lives > 0).length;
+    const mainPlayerLives = players[0]?.lives || 0;
+    
+    setGameState(prev => ({
+      ...prev,
+      playersLeft: alivePlayers,
+      lives: mainPlayerLives
+    }));
+
+    if (mainPlayerLives <= 0 && !gameOver.isOver) {
       setGameOver({
         isOver: true,
         message: '¡HAS PERDIDO!'
       });
+    } else if (alivePlayers === 1 && players[0].lives > 0 && !gameOver.isOver) {
+      setGameOver({
+        isOver: true,
+        message: '¡Has ganado la partida!'
+      });
     }
-  }, [gameState.lives]);
+  }, [players]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setGameState(prev => {
@@ -99,15 +140,13 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
   }, []);
 
   const handlePowerUpCollect = () => {
-    setGameState(prev => {
-      if (prev.lives < maxLives) {
-        return {
-          ...prev,
-          lives: prev.lives + 1
-        };
-      }
-      return prev; 
-    });
+    setPlayers(prevPlayers => 
+      prevPlayers.map((player, index) => 
+        index === 0 && player.lives < maxLives 
+          ? { ...player, lives: player.lives + 1 } 
+          : player
+      )
+    );
   };
 
   const handleBombPlaced = () => {
@@ -130,21 +169,26 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
     setExplosions(explosionPositions);
     
     if (!damageCooldownRef.current) {
-      const isPlayerInExplosion = explosionPositions.some(
-        exp => exp.row === playerPosition.row && exp.col === playerPosition.col
+      setPlayers(prevPlayers => 
+        prevPlayers.map(player => {
+          const isInExplosion = explosionPositions.some(
+            exp => exp.row === player.position.row && exp.col === player.position.col
+          );
+          
+          if (isInExplosion) {
+            damageCooldownRef.current = true;
+            setTimeout(() => {
+              damageCooldownRef.current = false;
+            }, 1000);
+            
+            return {
+              ...player,
+              lives: Math.max(0, player.lives - 1)
+            };
+          }
+          return player;
+        })
       );
-      
-      if (isPlayerInExplosion) {
-        damageCooldownRef.current = true;
-        setGameState(prev => ({
-          ...prev,
-          lives: Math.max(0, prev.lives - 1)
-        }));
-        
-        setTimeout(() => {
-          damageCooldownRef.current = false;
-        }, 1000);
-      }
     }
     
     setTimeout(() => {
@@ -158,7 +202,8 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
     return Array(size).fill(0).map((_, row) => {
       return Array(size).fill(0).map((_, col): CellType => {
         if (row === 0 || row === size-1 || col === 0 || col === size-1) return '1';
-        if (row === playerPosition.row && col === playerPosition.col) return 'P';
+        if (row === mainPlayer.position.row && col === mainPlayer.position.col && mainPlayer.lives > 0) return 'P';
+        if (otherPlayers.some(p => p.position.row === row && p.position.col === col && p.lives > 0)) return 'O';
         if (explosions.some(exp => exp.row === row && exp.col === col)) return 'X';
         return '0';
       });
@@ -170,6 +215,7 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       '0': 'empty-cell',
       '1': 'solid-block',
       'P': 'player',
+      'O': 'other-player',
       'X': 'explosion'
     };
 
@@ -177,13 +223,23 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       <div 
         className={`game-cell ${cellTypes[cell]}`}
         key={`${rowIndex}-${colIndex}`}
-        style={cell === 'P' ? { 
-          backgroundImage: `url(${playerImage})`,
-          backgroundSize: 'contain',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          backgroundColor: 'transparent'
-        } : {}}
+        style={
+          cell === 'P' ? { 
+            backgroundImage: `url(${playerImage})`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundColor: 'transparent'
+          } : 
+          cell === 'O' ? {
+            backgroundImage: `url(${playerImage})`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundColor: 'transparent',
+            opacity: 0.7
+          } : {}
+        }
       />
     );
   };
@@ -197,7 +253,7 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       />
       
       <HUD 
-        lives={gameState.lives}
+        lives={mainPlayer.lives}
         timeLeft={formatTime(gameState.timeLeftInSeconds)}
         playersLeft={gameState.playersLeft}
         score={gameState.score}
@@ -217,19 +273,26 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
             {(bombs, placeBomb, renderBomb) => (
               <PowerUpManager
                 boardSize={size}
-                playerPosition={playerPosition}
+                playerPosition={mainPlayer.position}
                 maxLives={maxLives}
-                currentLives={gameState.lives}
+                currentLives={mainPlayer.lives}
                 onCollect={handlePowerUpCollect}
               >
                 {(renderPowerUp) => (
                   <PlayerController
-                    initialPosition={{ row: center, col: center }}
+                    initialPosition={mainPlayer.position}
                     boardSize={size}
-                    onPositionChange={setPlayerPosition}
-                    onPlaceBomb={() => placeBomb(playerPosition)}
+                    onPositionChange={(newPos) => {
+                      setPlayers(prev => 
+                        prev.map((p, i) => i === 0 ? { ...p, position: newPos } : p)
+                      );
+                    }}
+                    onPlaceBomb={() => placeBomb(mainPlayer.position)}
                     walls={walls}
                     bombs={bombs}
+                    otherPlayers={otherPlayers
+                      .filter(p => p.lives > 0)
+                      .map(p => p.position)}
                   >
                     <div className="game-board">
                       {generateBoard().map((row, rowIndex) => (
@@ -252,30 +315,30 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       </WallManager>
 
       {gameOver.isOver && (
-      <div className="retro-game-over-card">
-        <div className="retro-game-over-content">
-        <h2 className={`retro-game-over-title ${gameState.lives <= 0 ? 'game-lost' : ''}`}>
-        {gameState.lives <= 0 ? '¡HAS PERDIDO!' : gameOver.message}
-        </h2>
-          <div className="retro-game-over-buttons">
-            <button 
-              className="retro-game-over-button"
-              onClick={() => window.location.reload()}
-            >
-              Jugar de nuevo
-            </button>
-            <button 
-              className="retro-game-over-button secondary"
-              onClick={() => {/* Lógica para menú principal */}}
-            >
-              Menú
-            </button>
+        <div className="retro-game-over-card">
+          <div className="retro-game-over-content">
+            <h2 className={`retro-game-over-title ${mainPlayer.lives <= 0 ? 'game-lost' : ''}`}>
+              {mainPlayer.lives <= 0 ? '¡HAS PERDIDO!' : gameOver.message}
+            </h2>
+            <div className="retro-game-over-buttons">
+              <button 
+                className="retro-game-over-button"
+                onClick={() => window.location.reload()}
+              >
+                Jugar de nuevo
+              </button>
+              <button 
+                className="retro-game-over-button secondary"
+                onClick={() => {/* Lógica para menú principal */}}
+              >
+                Menú
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 };
 
 function formatTime(seconds: number): string {

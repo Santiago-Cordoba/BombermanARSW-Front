@@ -236,3 +236,19 @@
   80% { clip: rect(60px, 9999px, 30px, 0); }
   100% { clip: rect(80px, 9999px, 20px, 0); }
 }
+
+.other-player {
+  position: relative;
+  z-index: 2;
+}
+
+.other-player::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 0, 0, 0.3);
+  border-radius: 50%;
+}
