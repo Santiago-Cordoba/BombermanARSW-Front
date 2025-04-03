@@ -10,7 +10,7 @@ const RetroButton: React.FC<RetroButtonProps> = ({ onClick }) => {
   return (
     <div className="button-container-guest">
       <button className="retro-button-guest" onClick={onClick}>
-        Invitado
+        Unirse 
       </button>
     </div>
   );

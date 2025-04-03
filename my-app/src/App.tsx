@@ -3,6 +3,8 @@ import HostPage from './pages/Host/hostPage';
 import HomePage from "./pages/Home/Home";
 import HostConfig from './pages/HostConfig/HostConfig';
 import GamePage from './pages/GamePage/GamePage';
+import WaitingRoomPage from './pages/room/WaitingRoomPage';
+import CreateRoomForm from './pages/CreateRoom/createRoomForm';
 
 function App() {
   return (
@@ -12,6 +14,8 @@ function App() {
         <Route path="/host" element={<HostPage />} />
         <Route path="/hostconfig" element={<HostConfig />} />
         <Route path="/game" element={<GamePage />} />
+        <Route path="/room/:roomCode" element={<WaitingRoomPage />} />
+        <Route path="/create-room" element={<CreateRoomForm />} />
       </Routes>
     </Router>
   );
