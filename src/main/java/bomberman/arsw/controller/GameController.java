@@ -6,6 +6,7 @@ import bomberman.arsw.service.GameService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 @RestController
@@ -19,6 +20,17 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    @PostMapping("/removeBomb")
+    public ResponseEntity<String> removeBomb(@RequestParam int x, @RequestParam int y) {
+        Game game = gameService.getCurrentGame();
+        if (game == null) {
+            return ResponseEntity.status(404).body("No hay una partida en curso.");
+        }
+
+        game.removeBomb(x, y);
+        return ResponseEntity.ok(game.getMapAsString());
+    }
+
     @PostMapping("/placeBomb")
     public ResponseEntity<String> placeBomb() {
         Game game = gameService.getCurrentGame();
@@ -26,7 +38,10 @@ public class GameController {
             return ResponseEntity.status(404).body("No hay una partida en curso.");
         }
 
-        game.placeBomb();
+        Map<String, Integer> bombPosition = game.placeBomb();
+        if (!bombPosition.isEmpty()) {
+            return ResponseEntity.ok(game.getMapAsString() + "|" + bombPosition.get("x") + "," + bombPosition.get("y"));
+        }
         return ResponseEntity.ok(game.getMapAsString());
     }
 

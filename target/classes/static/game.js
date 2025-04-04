@@ -25,7 +25,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown") direction = "DOWN";
     if (event.key === "ArrowLeft") direction = "LEFT";
     if (event.key === "ArrowRight") direction = "RIGHT";
-    if (event.key === "f" || event.key === "F") action = "PLACE_BOMB";
+    if (event.key === "f" || event.key === "F") action = "PLACE_BOMB"; // Esta línea faltaba
 
     if (direction) {
         fetch(`http://localhost:8080/game/move?direction=${direction}`, { method: "POST" })
@@ -40,9 +40,27 @@ document.addEventListener("keydown", (event) => {
     if (action === "PLACE_BOMB") {
         fetch(`http://localhost:8080/game/placeBomb`, { method: "POST" })
             .then(response => response.text())
-            .then(updatedMap => {
+            .then(response => {
+                const parts = response.split("|");
+                const updatedMap = parts[0];
                 console.log("Bomba colocada. Mapa actualizado:\n", updatedMap);
                 drawMap(updatedMap);
+
+                // Si se devolvió la posición de la bomba
+                if (parts.length > 1) {
+                    const [x, y] = parts[1].split(",").map(Number);
+
+                    // Eliminar la bomba después de 3 segundos
+                    setTimeout(() => {
+                        fetch(`http://localhost:8080/game/removeBomb?x=${x}&y=${y}`, { method: "POST" })
+                            .then(response => response.text())
+                            .then(updatedMap => {
+                                console.log("Bomba eliminada. Mapa actualizado:\n", updatedMap);
+                                drawMap(updatedMap);
+                            })
+                            .catch(error => console.error("Error al eliminar bomba:", error));
+                    }, 3000);
+                }
             })
             .catch(error => console.error("Error al colocar bomba:", error));
     }
@@ -100,6 +118,8 @@ function drawMap(mapString) {
     playerImage.src = "/img/Player.png";
     const bombImage = new Image();  // Nueva imagen para la bomba
     bombImage.src = "/img/Bomb.png";
+    const explosionImage = new Image();
+    explosionImage.src = "/img/Explotion.png";
 
     // Esperar a que todas las imágenes carguen
     let imagesLoaded = 0;
@@ -128,7 +148,9 @@ function drawMap(mapString) {
                     ctx.drawImage(playerImage, x * cellSize, y * cellSize, cellSize, cellSize);
                 } else if (rows[y][x] === "B") {
                     ctx.drawImage(bombImage, x * cellSize, y * cellSize, cellSize, cellSize);
-                }
+                } else if (rows[y][x] === "E") { // Para explosiones
+                ctx.drawImage(explosionImage, x * cellSize, y * cellSize, cellSize, cellSize);
+            }
 
                 // Dibujar líneas de la cuadrícula
                 ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";

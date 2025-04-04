@@ -2,6 +2,7 @@ package bomberman.arsw.Model;
 
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -23,18 +24,32 @@ public class Game {
         placeRandomBlocks(config.getBloques());
     }
 
-    public void placeBomb() {
-        if (players.isEmpty()) return;
+    public void removeBomb(int x, int y) {
+        Cell cell = gameMap.getCell(x, y);
+        if (cell.hasBomb()) {
+            cell.setBomb(false);
+            System.out.println("Bomba eliminada en posición: (" + x + ", " + y + ")");
+
+            // Aquí podrías añadir lógica de explosión si lo deseas
+            // explodeBomb(x, y);
+        }
+    }
+
+    public java.util.Map<String, Integer> placeBomb() {
+        java.util.Map<String, Integer> position = new HashMap<>();
+        if (players.isEmpty()) return position;
 
         Player player = players.get(0);
         int x = player.getXPosition();
         int y = player.getYPosition();
 
-        // Verificar que la celda no tenga ya una bomba
         if (!gameMap.getCell(x, y).hasBomb()) {
             gameMap.setCell(x, y, 'B');
+            position.put("x", x);
+            position.put("y", y);
             System.out.println("Bomba colocada en posición: (" + x + ", " + y + ")");
         }
+        return position;
     }
 
     // ✅ Mueve al jugador en la dirección especificada
