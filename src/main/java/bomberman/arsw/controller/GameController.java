@@ -19,6 +19,17 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    @PostMapping("/placeBomb")
+    public ResponseEntity<String> placeBomb() {
+        Game game = gameService.getCurrentGame();
+        if (game == null) {
+            return ResponseEntity.status(404).body("No hay una partida en curso.");
+        }
+
+        game.placeBomb();
+        return ResponseEntity.ok(game.getMapAsString());
+    }
+
     @PostMapping("/move")
     public ResponseEntity<String> movePlayer(@RequestParam String direction) {
         Game game = gameService.getCurrentGame();

@@ -23,6 +23,20 @@ public class Game {
         placeRandomBlocks(config.getBloques());
     }
 
+    public void placeBomb() {
+        if (players.isEmpty()) return;
+
+        Player player = players.get(0);
+        int x = player.getXPosition();
+        int y = player.getYPosition();
+
+        // Verificar que la celda no tenga ya una bomba
+        if (!gameMap.getCell(x, y).hasBomb()) {
+            gameMap.setCell(x, y, 'B');
+            System.out.println("Bomba colocada en posición: (" + x + ", " + y + ")");
+        }
+    }
+
     // ✅ Mueve al jugador en la dirección especificada
     public void movePlayer(String direction) {
         if (players.isEmpty()) return;
@@ -56,6 +70,8 @@ public class Game {
                 Cell cell = gameMap.getCell(i, j);
                 if (cell.hasPlayer()) {
                     mapString.append("P");
+                } else if (cell.hasBomb()) {
+                    mapString.append("B");  // Ahora mostrará 'B' para bombas
                 } else if (cell.hasWall()) {
                     mapString.append("#");
                 } else {

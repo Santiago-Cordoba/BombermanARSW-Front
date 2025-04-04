@@ -16,22 +16,35 @@ console.log("Bloques:", blocks);
 console.log("Vidas:", lives);
 
 // Escuchar las teclas y enviar movimiento al backend
+// Escuchar las teclas y enviar movimiento al backend
 document.addEventListener("keydown", (event) => {
     let direction = null;
+    let action = null;
 
     if (event.key === "ArrowUp") direction = "UP";
     if (event.key === "ArrowDown") direction = "DOWN";
     if (event.key === "ArrowLeft") direction = "LEFT";
     if (event.key === "ArrowRight") direction = "RIGHT";
+    if (event.key === "f" || event.key === "F") action = "PLACE_BOMB";
 
     if (direction) {
         fetch(`http://localhost:8080/game/move?direction=${direction}`, { method: "POST" })
             .then(response => response.text())
             .then(updatedMap => {
                 console.log("Mapa actualizado desde el servidor:\n", updatedMap);
-                drawMap(updatedMap); // Redibujar el mapa con la nueva posición
+                drawMap(updatedMap);
             })
             .catch(error => console.error("Error al mover el jugador:", error));
+    }
+
+    if (action === "PLACE_BOMB") {
+        fetch(`http://localhost:8080/game/placeBomb`, { method: "POST" })
+            .then(response => response.text())
+            .then(updatedMap => {
+                console.log("Bomba colocada. Mapa actualizado:\n", updatedMap);
+                drawMap(updatedMap);
+            })
+            .catch(error => console.error("Error al colocar bomba:", error));
     }
 });
 
@@ -80,28 +93,50 @@ function drawMap(mapString) {
     // Hacer el fondo del canvas transparente
     canvas.style.backgroundColor = "transparent";
 
+    // Cargar todas las imágenes necesarias
     const wallImage = new Image();
-    wallImage.src = "/img/muro.png";
+    wallImage.src = "/img/Wall.png";
     const playerImage = new Image();
-    playerImage.src = "/img/player.png";
+    playerImage.src = "/img/Player.png";
+    const bombImage = new Image();  // Nueva imagen para la bomba
+    bombImage.src = "/img/Bomb.png";
 
-    wallImage.onload = playerImage.onload = function () {
+    // Esperar a que todas las imágenes carguen
+    let imagesLoaded = 0;
+    const totalImages = 3;
+
+    function checkAllImagesLoaded() {
+        imagesLoaded++;
+        if (imagesLoaded === totalImages) {
+            drawAllElements();
+        }
+    }
+
+    wallImage.onload = checkAllImagesLoaded;
+    playerImage.onload = checkAllImagesLoaded;
+    bombImage.onload = checkAllImagesLoaded;
+
+    function drawAllElements() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         for (let y = 0; y < rows.length; y++) {
             for (let x = 0; x < cols; x++) {
+                // Dibujar elementos según su tipo
                 if (rows[y][x] === "#") {
                     ctx.drawImage(wallImage, x * cellSize, y * cellSize, cellSize, cellSize);
                 } else if (rows[y][x] === "P") {
                     ctx.drawImage(playerImage, x * cellSize, y * cellSize, cellSize, cellSize);
+                } else if (rows[y][x] === "B") {
+                    ctx.drawImage(bombImage, x * cellSize, y * cellSize, cellSize, cellSize);
                 }
 
                 // Dibujar líneas de la cuadrícula
-                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)"; // Color de las líneas
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
                 ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
             }
         }
-    };
+    }
+
 
 
 
