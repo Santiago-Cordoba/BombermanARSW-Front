@@ -20,6 +20,17 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    @PostMapping("/explosion")
+    public ResponseEntity<String> handleExplosion(@RequestParam int x, @RequestParam int y) {
+        Game game = gameService.getCurrentGame();
+        if (game == null) {
+            return ResponseEntity.status(404).body("No hay una partida en curso.");
+        }
+
+        game.getMap().setCell(x, y, '.');
+        return ResponseEntity.ok(game.getMapAsString());
+    }
+
     @PostMapping("/removeBomb")
     public ResponseEntity<String> removeBomb(@RequestParam int x, @RequestParam int y) {
         Game game = gameService.getCurrentGame();
@@ -32,17 +43,20 @@ public class GameController {
     }
 
     @PostMapping("/placeBomb")
-    public ResponseEntity<String> placeBomb() {
+    public ResponseEntity<Map<String, Object>> placeBomb() {
         Game game = gameService.getCurrentGame();
         if (game == null) {
-            return ResponseEntity.status(404).body("No hay una partida en curso.");
+            return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "message", "No hay una partida en curso"
+            ));
         }
 
-        Map<String, Integer> bombPosition = game.placeBomb();
-        if (!bombPosition.isEmpty()) {
-            return ResponseEntity.ok(game.getMapAsString() + "|" + bombPosition.get("x") + "," + bombPosition.get("y"));
+        Map<String, Object> response = game.placeBomb();
+        if ((Boolean) response.get("success")) {
+            response.put("map", game.getMapAsString());
         }
-        return ResponseEntity.ok(game.getMapAsString());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/move")
@@ -53,7 +67,7 @@ public class GameController {
         }
 
         game.movePlayer(direction);
-        return ResponseEntity.ok(game.getMapAsString());  // Devuelve el nuevo estado del mapa
+        return ResponseEntity.ok(game.getMapAsString());
     }
 
     @PostMapping("/start")

@@ -25,7 +25,33 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowDown") direction = "DOWN";
     if (event.key === "ArrowLeft") direction = "LEFT";
     if (event.key === "ArrowRight") direction = "RIGHT";
-    if (event.key === "f" || event.key === "F") action = "PLACE_BOMB"; // Esta línea faltaba
+// Dentro del event listener para colocar bombas:
+    if (event.key === "f" || event.key === "F") {
+        fetch(`http://localhost:8080/game/placeBomb`, { method: "POST" })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log("Bomba colocada. Mapa actualizado:\n", data.map);
+                    drawMap(data.map);
+
+                    // Esperar 3 segundos y luego verificar la explosión
+                    setTimeout(() => {
+                        fetch(`http://localhost:8080/game/explosion?x=${data.x}&y=${data.y}`, {
+                            method: "POST"
+                        })
+                            .then(response => response.text())
+                            .then(updatedMap => {
+                                console.log("Bomba explotó. Mapa actualizado:\n", updatedMap);
+                                drawMap(updatedMap);
+                            });
+                    }, 3000);
+                } else {
+                    console.log(data.message);
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error("Error al colocar bomba:", error));
+    }
 
     if (direction) {
         fetch(`http://localhost:8080/game/move?direction=${direction}`, { method: "POST" })

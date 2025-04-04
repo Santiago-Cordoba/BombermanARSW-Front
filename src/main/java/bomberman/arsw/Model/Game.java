@@ -1,14 +1,21 @@
 package bomberman.arsw.Model;
 
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 @Service
 public class Game {
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static final Logger logger = Logger.getLogger(Game.class.getName());
     private GameConfig config;
     private Map gameMap;
@@ -24,6 +31,10 @@ public class Game {
         placeRandomBlocks(config.getBloques());
     }
 
+    public Map getMap() {
+        return this.gameMap;
+    }
+
     public void removeBomb(int x, int y) {
         Cell cell = gameMap.getCell(x, y);
         if (cell.hasBomb()) {
@@ -35,21 +46,62 @@ public class Game {
         }
     }
 
-    public java.util.Map<String, Integer> placeBomb() {
-        java.util.Map<String, Integer> position = new HashMap<>();
-        if (players.isEmpty()) return position;
+    public java.util.Map<String, Object> placeBomb() {
+        java.util.Map<String, Object> response = new HashMap<>();
+        if (players.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "No hay jugadores");
+            return response;
+        }
 
         Player player = players.get(0);
+        if (!player.canPlaceBomb()) {
+            response.put("success", false);
+            response.put("message", "Debes esperar a que explote tu bomba anterior");
+            return response;
+        }
+
         int x = player.getXPosition();
         int y = player.getYPosition();
 
         if (!gameMap.getCell(x, y).hasBomb()) {
+            Bomb bomb = new Bomb(x, y, 3, 3, player);
+            player.addBomb(bomb);
             gameMap.setCell(x, y, 'B');
-            position.put("x", x);
-            position.put("y", y);
-            System.out.println("Bomba colocada en posición: (" + x + ", " + y + ")");
+
+            response.put("success", true);
+            response.put("x", x);
+            response.put("y", y);
+            response.put("bombId", bomb.hashCode());
+
+            // Programar explosión con ScheduledExecutorService
+            scheduler.schedule(() -> {
+                explodeBomb(bomb);
+            }, 3, TimeUnit.SECONDS);
         }
-        return position;
+        return response;
+    }
+
+    private void explodeBomb(Bomb bomb) {
+        synchronized(this) {
+            Player owner = bomb.getOwner();
+            gameMap.setCell(bomb.getXPosition(), bomb.getYPosition(), 'E'); // 'E' para explosión
+
+            // Notificar a los clientes sobre la explosión
+            notifyAllPlayers();
+
+            // Esperar 1 segundo para la animación de explosión
+            scheduler.schedule(() -> {
+                gameMap.setCell(bomb.getXPosition(), bomb.getYPosition(), '.');
+                owner.removeBomb(bomb);
+                notifyAllPlayers();
+            }, 1, TimeUnit.SECONDS);
+        }
+    }
+
+    private void notifyAllPlayers() {
+        // Implementar lógica para notificar a todos los clientes
+        // Esto puede ser a través de WebSocket o simplemente actualizando el estado
     }
 
     // ✅ Mueve al jugador en la dirección especificada
