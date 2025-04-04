@@ -1,11 +1,13 @@
 package bomberman.arsw.controller;
 
+import bomberman.arsw.Model.Bomb;
 import bomberman.arsw.Model.Game;
 import bomberman.arsw.Model.GameConfig;
 import bomberman.arsw.service.GameService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -20,14 +22,14 @@ public class GameController {
         this.gameService = gameService;
     }
 
-    @PostMapping("/explosion")
-    public ResponseEntity<String> handleExplosion(@RequestParam int x, @RequestParam int y) {
+    @PostMapping("/explode")
+    public ResponseEntity<String> explodeBomb(@RequestBody Bomb bomb) {
         Game game = gameService.getCurrentGame();
         if (game == null) {
-            return ResponseEntity.status(404).body("No hay una partida en curso.");
+            return ResponseEntity.status(404).body("No hay partida activa");
         }
 
-        game.getMap().setCell(x, y, '.');
+        game.explodeBomb(bomb);
         return ResponseEntity.ok(game.getMapAsString());
     }
 
@@ -52,10 +54,14 @@ public class GameController {
             ));
         }
 
-        Map<String, Object> response = game.placeBomb();
-        if ((Boolean) response.get("success")) {
-            response.put("map", game.getMapAsString());
+        Map<Object, Object> rawResponse = game.placeBomb();
+        Map<String, Object> response = new HashMap<>();
+        for (Map.Entry<Object, Object> entry : rawResponse.entrySet()) {
+            if (entry.getKey() instanceof String) {
+                response.put((String) entry.getKey(), entry.getValue());
+            }
         }
+
         return ResponseEntity.ok(response);
     }
 

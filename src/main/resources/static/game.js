@@ -27,30 +27,39 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "ArrowRight") direction = "RIGHT";
 // Dentro del event listener para colocar bombas:
     if (event.key === "f" || event.key === "F") {
-        fetch(`http://localhost:8080/game/placeBomb`, { method: "POST" })
+// Al colocar bomba
+        fetch('/game/placeBomb', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    console.log("Bomba colocada. Mapa actualizado:\n", data.map);
+                    // Mostrar bomba
                     drawMap(data.map);
 
-                    // Esperar 3 segundos y luego verificar la explosión
+                    // Explotar después de 3 segundos
                     setTimeout(() => {
-                        fetch(`http://localhost:8080/game/explosion?x=${data.x}&y=${data.y}`, {
-                            method: "POST"
+                        fetch('/game/explode', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data.bomb)
                         })
                             .then(response => response.text())
-                            .then(updatedMap => {
-                                console.log("Bomba explotó. Mapa actualizado:\n", updatedMap);
-                                drawMap(updatedMap);
+                            .then(map => {
+                                // Mostrar explosión
+                                drawMap(map);
+
+                                // Ocultar explosión después de 1 segundo
+                                setTimeout(() => {
+                                    fetch('/game/clearExplosion', {
+                                        method: 'POST',
+                                        body: JSON.stringify(data.bomb)
+                                    })
+                                        .then(response => response.text())
+                                        .then(finalMap => drawMap(finalMap));
+                                }, 1000);
                             });
                     }, 3000);
-                } else {
-                    console.log(data.message);
-                    alert(data.message);
                 }
-            })
-            .catch(error => console.error("Error al colocar bomba:", error));
+            });
     }
 
     if (direction) {

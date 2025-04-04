@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 @Service
@@ -21,6 +19,7 @@ public class Game {
     private Map gameMap;
     private List<Player> players;
     private Random random = new Random();
+    private List<Bomb> activeBombs = new ArrayList<>();
 
     public Game(GameConfig config) {
         this.config = config != null ? config : new GameConfig();
@@ -46,56 +45,95 @@ public class Game {
         }
     }
 
-    public java.util.Map<String, Object> placeBomb() {
-        java.util.Map<String, Object> response = new HashMap<>();
-        if (players.isEmpty()) {
-            response.put("success", false);
-            response.put("message", "No hay jugadores");
-            return response;
-        }
-
+    public HashMap<Object, Object> placeBomb() {
+        HashMap<Object, Object> response = new HashMap<>();
         Player player = players.get(0);
+
         if (!player.canPlaceBomb()) {
             response.put("success", false);
-            response.put("message", "Debes esperar a que explote tu bomba anterior");
+            response.put("message", "Espera a que explote tu bomba anterior");
             return response;
         }
 
-        int x = player.getXPosition();
-        int y = player.getYPosition();
+        Bomb bomb = new Bomb(
+                player.getXPosition(),
+                player.getYPosition(),
+                4,  // Radio de explosión
+                player
+        );
 
-        if (!gameMap.getCell(x, y).hasBomb()) {
-            Bomb bomb = new Bomb(x, y, 3, 3, player);
-            player.addBomb(bomb);
-            gameMap.setCell(x, y, 'B');
+        activeBombs.add(bomb);
+        gameMap.setCell(bomb.getX(), bomb.getY(), 'B');
+        player.setCanPlaceBomb(false);
 
-            response.put("success", true);
-            response.put("x", x);
-            response.put("y", y);
-            response.put("bombId", bomb.hashCode());
+        // Programar explosión después de 3 segundos
+        scheduler.schedule(() -> explodeBomb(bomb), 3, TimeUnit.SECONDS);
 
-            // Programar explosión con ScheduledExecutorService
-            scheduler.schedule(() -> {
-                explodeBomb(bomb);
-            }, 3, TimeUnit.SECONDS);
-        }
+        response.put("success", true);
+        response.put("bomb", bomb);
         return response;
     }
 
-    private void explodeBomb(Bomb bomb) {
-        synchronized(this) {
-            Player owner = bomb.getOwner();
-            gameMap.setCell(bomb.getXPosition(), bomb.getYPosition(), 'E'); // 'E' para explosión
+    public void explodeBomb(Bomb bomb) {
+        bomb.setExploded(true);
+        gameMap.setCell(bomb.getX(), bomb.getY(), 'E'); // Celda central
 
-            // Notificar a los clientes sobre la explosión
-            notifyAllPlayers();
+        // Explosión en 4 direcciones
+        explodeDirection(bomb, 1, 0);  // Derecha
+        explodeDirection(bomb, -1, 0); // Izquierda
+        explodeDirection(bomb, 0, 1);  // Abajo
+        explodeDirection(bomb, 0, -1); // Arriba
 
-            // Esperar 1 segundo para la animación de explosión
-            scheduler.schedule(() -> {
-                gameMap.setCell(bomb.getXPosition(), bomb.getYPosition(), '.');
-                owner.removeBomb(bomb);
-                notifyAllPlayers();
-            }, 1, TimeUnit.SECONDS);
+        // Eliminar bomba después de 1 segundo (para animación)
+        scheduler.schedule(() -> {
+            activeBombs.remove(bomb);
+            bomb.getOwner().setCanPlaceBomb(true);
+            clearExplosion(bomb);
+        }, 1, TimeUnit.SECONDS);
+    }
+
+    private void explodeDirection(Bomb bomb, int dx, int dy) {
+        for (int i = 1; i <= bomb.getRadius(); i++) {
+            int x = bomb.getX() + (dx * i);
+            int y = bomb.getY() + (dy * i);
+
+            if (!gameMap.isValidPosition(x, y)) break;
+
+            if (gameMap.getCell(x, y).hasWall()) {
+                // Romper paredes destructibles
+                if (gameMap.getCell(x, y).isDestructible()) {
+                    gameMap.setCell(x, y, 'E');
+                }
+                break;
+            }
+
+            gameMap.setCell(x, y, 'E'); // Marcar como explosión
+        }
+    }
+
+    private void clearExplosion(Bomb bomb) {
+        // Limpiar explosión central
+        gameMap.setCell(bomb.getX(), bomb.getY(), '.');
+
+        // Limpiar explosiones en 4 direcciones
+        clearExplosionDirection(bomb, 1, 0);
+        clearExplosionDirection(bomb, -1, 0);
+        clearExplosionDirection(bomb, 0, 1);
+        clearExplosionDirection(bomb, 0, -1);
+    }
+
+    private void clearExplosionDirection(Bomb bomb, int dx, int dy) {
+        for (int i = 1; i <= bomb.getRadius(); i++) {
+            int x = bomb.getX() + (dx * i);
+            int y = bomb.getY() + (dy * i);
+
+            if (!gameMap.isValidPosition(x, y)) break;
+
+            if (gameMap.getCell(x, y).getCharRepresentation() == 'E') {
+                gameMap.setCell(x, y, '.');
+            } else {
+                break;
+            }
         }
     }
 
