@@ -22,6 +22,21 @@ public class GameController {
         this.gameService = gameService;
     }
 
+    @PostMapping("/preExplode")
+    public ResponseEntity<String> triggerPreExplosion(@RequestBody BombPosition position) {
+        Game game = gameService.getCurrentGame();
+        if (game == null) {
+            return ResponseEntity.status(404).body("No hay una partida activa.");
+        }
+
+        game.getBombs().stream()
+                .filter(b -> b.getX() == position.x() && b.getY() == position.y())
+                .findFirst()
+                .ifPresent(Bomb::triggerPreExplosion);
+
+        return ResponseEntity.ok(game.getMapAsString());
+    }
+
     @PostMapping("/explode")
     public ResponseEntity<String> explodeBomb(@RequestBody Bomb bomb) {
         Game game = gameService.getCurrentGame();
@@ -29,7 +44,7 @@ public class GameController {
             return ResponseEntity.status(404).body("No hay partida activa");
         }
 
-        game.explodeBomb(bomb);
+        game.explodeBomb(bomb); // Asegúrate de que este método sea público en Game.java
         return ResponseEntity.ok(game.getMapAsString());
     }
 
@@ -111,4 +126,7 @@ public class GameController {
         }
         return ResponseEntity.ok(currentGame.getMapAsString());
     }
+
+    // Record para manejar la posición de una bomba
+    public record BombPosition(int x, int y) {}
 }

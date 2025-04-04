@@ -11,6 +11,7 @@ public class Bomb {
     private int radius;
     private Player owner;
     private boolean exploded;
+    private boolean preExplosion; // Nuevo estado
 
     public Bomb(int x, int y, int radius, Player owner) {
         this.x = x;
@@ -18,5 +19,11 @@ public class Bomb {
         this.radius = radius;
         this.owner = owner;
         this.exploded = false;
+
     }
+
+    public void triggerPreExplosion() {
+        this.preExplosion = true;
+    }
+
 }

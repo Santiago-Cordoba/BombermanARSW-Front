@@ -10,6 +10,7 @@ bomberman\arsw\server\GameServer$ClientHandler.class
 bomberman\arsw\Model\Cell.class
 bomberman\arsw\Model\Game.class
 bomberman\arsw\Model\Explosion.class
+bomberman\arsw\controller\GameController$BombPosition.class
 bomberman\arsw\Model\Map.class
 bomberman\arsw\Model\MapPanel.class
 bomberman\arsw\controller\GameController.class

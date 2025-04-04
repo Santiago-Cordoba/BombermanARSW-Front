@@ -39,9 +39,6 @@ public class Game {
         if (cell.hasBomb()) {
             cell.setBomb(false);
             System.out.println("Bomba eliminada en posición: (" + x + ", " + y + ")");
-
-            // Aquí podrías añadir lógica de explosión si lo deseas
-            // explodeBomb(x, y);
         }
     }
 
@@ -63,10 +60,11 @@ public class Game {
         );
 
         activeBombs.add(bomb);
-        gameMap.setCell(bomb.getX(), bomb.getY(), 'B');
+        Cell cell = gameMap.getCell(bomb.getX(), bomb.getY());
+        cell.setBomb(true); // 🔥 Muy importante para que el mapa la muestre como 'B'
+
         player.setCanPlaceBomb(false);
 
-        // Programar explosión después de 3 segundos
         scheduler.schedule(() -> explodeBomb(bomb), 3, TimeUnit.SECONDS);
 
         response.put("success", true);
@@ -74,48 +72,47 @@ public class Game {
         return response;
     }
 
+    // 🔓 Método ahora público
     public void explodeBomb(Bomb bomb) {
-        bomb.setExploded(true);
-        gameMap.setCell(bomb.getX(), bomb.getY(), 'E'); // Celda central
+        int x = bomb.getX();
+        int y = bomb.getY();
+        int radius = bomb.getRadius();
 
-        // Explosión en 4 direcciones
-        explodeDirection(bomb, 1, 0);  // Derecha
-        explodeDirection(bomb, -1, 0); // Izquierda
-        explodeDirection(bomb, 0, 1);  // Abajo
-        explodeDirection(bomb, 0, -1); // Arriba
+        gameMap.getCell(x, y).setExplosion(true);
 
-        // Eliminar bomba después de 1 segundo (para animación)
-        scheduler.schedule(() -> {
-            activeBombs.remove(bomb);
-            bomb.getOwner().setCanPlaceBomb(true);
-            clearExplosion(bomb);
-        }, 1, TimeUnit.SECONDS);
-    }
+        int[][] directions = {
+                {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+        };
 
-    private void explodeDirection(Bomb bomb, int dx, int dy) {
-        for (int i = 1; i <= bomb.getRadius(); i++) {
-            int x = bomb.getX() + (dx * i);
-            int y = bomb.getY() + (dy * i);
+        for (int[] dir : directions) {
+            int dx = dir[0];
+            int dy = dir[1];
 
-            if (!gameMap.isValidPosition(x, y)) break;
+            for (int i = 1; i <= radius; i++) {
+                int newX = x + dx * i;
+                int newY = y + dy * i;
 
-            if (gameMap.getCell(x, y).hasWall()) {
-                // Romper paredes destructibles
-                if (gameMap.getCell(x, y).isDestructible()) {
-                    gameMap.setCell(x, y, 'E');
+                if (!gameMap.isValidPosition(newX, newY)) break;
+
+                Cell cell = gameMap.getCell(newX, newY);
+                if (!cell.hasWall()) {
+                    gameMap.setCell(newX, newY, 'E');
+                } else {
+                    break;
                 }
-                break;
             }
-
-            gameMap.setCell(x, y, 'E'); // Marcar como explosión
         }
+
+        scheduler.schedule(() -> clearExplosion(bomb), 1, TimeUnit.SECONDS);
+        bomb.getOwner().setCanPlaceBomb(true);
+        notifyAllPlayers();
     }
 
     private void clearExplosion(Bomb bomb) {
-        // Limpiar explosión central
         gameMap.setCell(bomb.getX(), bomb.getY(), '.');
+        gameMap.getCell(bomb.getX(), bomb.getY()).setExplosion(false);
 
-        // Limpiar explosiones en 4 direcciones
+
         clearExplosionDirection(bomb, 1, 0);
         clearExplosionDirection(bomb, -1, 0);
         clearExplosionDirection(bomb, 0, 1);
@@ -130,7 +127,7 @@ public class Game {
             if (!gameMap.isValidPosition(x, y)) break;
 
             if (gameMap.getCell(x, y).getCharRepresentation() == 'E') {
-                gameMap.setCell(x, y, '.');
+                gameMap.getCell(x, y).setExplosion(false);
             } else {
                 break;
             }
@@ -138,11 +135,9 @@ public class Game {
     }
 
     private void notifyAllPlayers() {
-        // Implementar lógica para notificar a todos los clientes
-        // Esto puede ser a través de WebSocket o simplemente actualizando el estado
+        // Implementar notificación a clientes vía WebSocket u otra estrategia
     }
 
-    // ✅ Mueve al jugador en la dirección especificada
     public void movePlayer(String direction) {
         if (players.isEmpty()) return;
 
@@ -167,16 +162,17 @@ public class Game {
         }
     }
 
-    // ✅ Devuelve el mapa como un string
     public String getMapAsString() {
         StringBuilder mapString = new StringBuilder();
         for (int i = 0; i < gameMap.getHeight(); i++) {
             for (int j = 0; j < gameMap.getWidth(); j++) {
                 Cell cell = gameMap.getCell(i, j);
-                if (cell.hasPlayer()) {
+                if (cell.hasExplosion()) {
+                    mapString.append("E");
+                } else if (cell.hasPlayer()) {
                     mapString.append("P");
                 } else if (cell.hasBomb()) {
-                    mapString.append("B");  // Ahora mostrará 'B' para bombas
+                    mapString.append("B");
                 } else if (cell.hasWall()) {
                     mapString.append("#");
                 } else {
@@ -188,12 +184,10 @@ public class Game {
         return mapString.toString();
     }
 
-    // ✅ Retorna la configuración del juego
     public GameConfig getConfig() {
         return config;
     }
 
-    // ✅ Método para inicializar posiciones de los jugadores
     private void assignRandomPositions() {
         int numPlayers = config.getJugadores();
         for (int i = 0; i < numPlayers; i++) {
@@ -209,7 +203,6 @@ public class Game {
         }
     }
 
-    // ✅ Método para colocar bloques aleatorios en el mapa
     private void placeRandomBlocks(int numBlocks) {
         for (int i = 0; i < numBlocks; i++) {
             int x, y;
@@ -229,7 +222,6 @@ public class Game {
         System.out.println("Bloques: " + config.getBloques());
         System.out.println("Vidas: " + config.getVidas());
 
-        // Limpiar el mapa y reiniciar posiciones
         this.gameMap = new Map(config.getMapaAlto(), config.getMapaAncho());
         this.players.clear();
 
@@ -239,4 +231,8 @@ public class Game {
         System.out.println("Mapa generado:\n" + getMapAsString());
     }
 
+    // ✅ Nuevo getter público
+    public List<Bomb> getBombs() {
+        return this.activeBombs;
+    }
 }

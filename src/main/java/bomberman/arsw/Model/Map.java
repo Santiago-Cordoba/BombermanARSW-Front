@@ -7,6 +7,8 @@ public class Map {
     private int width;
     private int height;
 
+    private static final Logger logger = Logger.getLogger(Map.class.getName());
+
     public Map(int width, int height) {
         this.width = width;
         this.height = height;
@@ -20,29 +22,26 @@ public class Map {
         }
     }
 
-    public void setCell(int x, int y, char type) {
+    public void setCell(int x, int y, char ch) {
         Cell cell = cells[y][x];
-        switch (type) {
-            case '#': // Pared indestructible
-                cell.setWall(true, false);
-                break;
-            case 'D': // Pared destructible
-                cell.setWall(true, true);
-                break;
-            case 'P': // Jugador
+        switch (ch) {
+            case 'P':
                 cell.setPlayer(true);
                 break;
-            case 'B': // Bomba
+            case 'B':
                 cell.setBomb(true);
                 break;
-            case 'E': // Explosión
+            case '#':
+                cell.setWall(true, false); // muro no destructible
+                break;
+            case 'D':
+                cell.setWall(true, true); // muro destructible (si decides usarlo)
+                break;
+            case 'E':
                 cell.setExplosion(true);
                 break;
-            case '.': // Vacío
-                cell.setWall(false, false);
-                cell.setPlayer(false);
-                cell.setBomb(false);
-                cell.setExplosion(false);
+            case '.':
+                cell.reset();
                 break;
         }
     }
@@ -57,14 +56,15 @@ public class Map {
 
     public char getChar(int x, int y) {
         Cell cell = cells[y][x];
-        if (cell.hasPlayer()) return 'P';
+        if (cell.hasExplosion()) return 'E';
         if (cell.hasBomb()) return 'B';
+        if (cell.hasPlayer()) return 'P';
         if (cell.hasWall()) return cell.isDestructible() ? 'D' : '#';
         return '.';
     }
 
     public boolean isCellEmpty(int x, int y) {
-        return cells[y][x].isEmpty();  // Se asume que isEmpty() está en Cell.java
+        return cells[y][x].isEmpty();
     }
 
     public void setBlock(int x, int y) {
@@ -85,13 +85,7 @@ public class Map {
         for (int i = 0; i < height; i++) {
             StringBuilder row = new StringBuilder();
             for (int j = 0; j < width; j++) {
-                if (cells[i][j].hasPlayer()) {
-                    row.append("P ");
-                } else if (cells[i][j].hasWall()) {
-                    row.append("# ");
-                } else {
-                    row.append(". ");
-                }
+                row.append(getChar(j, i)).append(" ");
             }
             logger.info(row.toString());
         }
@@ -100,7 +94,4 @@ public class Map {
     public boolean isDestructibleWall(int x, int y) {
         return isValidPosition(x, y) && cells[y][x].hasWall() && cells[y][x].isDestructible();
     }
-
-    private static final Logger logger = Logger.getLogger(Map.class.getName());
-
 }

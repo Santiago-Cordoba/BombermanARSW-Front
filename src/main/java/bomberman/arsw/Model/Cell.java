@@ -9,10 +9,19 @@ public class Cell {
     private boolean hasBomb;
     private boolean hasExplosion;
 
-    // Constructor con coordenadas
+    // Constructor
     public Cell(int x, int y) {
         this.x = x;
         this.y = y;
+        this.hasWall = false;
+        this.isDestructible = false;
+        this.hasPlayer = false;
+        this.hasBomb = false;
+        this.hasExplosion = false;
+    }
+
+    // Método para reiniciar la celda (vacía)
+    public void reset() {
         this.hasWall = false;
         this.isDestructible = false;
         this.hasPlayer = false;
@@ -35,7 +44,6 @@ public class Cell {
         this.isDestructible = isDestructible;
     }
 
-    // Método setBlock (alternativo a setWall)
     public void setBlock(boolean isWall) {
         this.hasWall = isWall;
         this.isDestructible = false; // Por defecto no destructible
@@ -53,17 +61,17 @@ public class Cell {
         this.hasExplosion = hasExplosion;
     }
 
-    // Helper methods
+    // La celda está vacía si no tiene jugador, bomba, explosión ni pared
     public boolean isEmpty() {
         return !hasWall && !hasPlayer && !hasBomb && !hasExplosion;
     }
 
+    // Representación de carácter para el mapa
     public char getCharRepresentation() {
         if (hasExplosion) return 'E';
-        if (hasPlayer) return 'P';
         if (hasBomb) return 'B';
+        if (hasPlayer) return 'P';
         if (hasWall) return isDestructible ? 'D' : '#';
         return '.';
     }
-
 }

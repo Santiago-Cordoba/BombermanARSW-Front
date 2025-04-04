@@ -62,6 +62,38 @@ document.addEventListener("keydown", (event) => {
             });
     }
 
+    function handleBombPlacement(data) {
+        // Mostrar bomba
+        drawMap(data.map);
+
+        // Pre-explosión a los 2 segundos (1s antes de desaparecer)
+        setTimeout(() => {
+            fetch('/game/preExplode', {
+                method: 'POST',
+                body: JSON.stringify({x: data.x, y: data.y})
+            })
+                .then(() => drawMap());
+
+            // Explosión real a los 3 segundos
+            setTimeout(() => {
+                fetch('/game/explode', {
+                    method: 'POST',
+                    body: JSON.stringify({x: data.x, y: data.y})
+                })
+                    .then(() => drawMap());
+
+                // Limpiar después de 1 segundo más
+                setTimeout(() => {
+                    fetch('/game/clearExplosion', {
+                        method: 'POST',
+                        body: JSON.stringify({x: data.x, y: data.y})
+                    })
+                        .then(() => drawMap());
+                }, 1000);
+            }, 1000);
+        }, 2000);
+    }
+
     if (direction) {
         fetch(`http://localhost:8080/game/move?direction=${direction}`, { method: "POST" })
             .then(response => response.text())
