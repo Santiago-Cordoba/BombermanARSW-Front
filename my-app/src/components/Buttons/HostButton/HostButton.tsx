@@ -11,13 +11,13 @@ const RetroButton: React.FC<RetroButtonProps> = ({ onClick }) => {
 
   const handleHostClick = () => {
     if (onClick) onClick();
-    navigate("/hostconfig"); 
+    navigate("/create-room"); // Redirige al formulario de creación
   };
 
   return (
     <div className="button-container-host">
       <button className="retro-button-host" onClick={handleHostClick}>
-        Host
+        Crear Partida
       </button>
     </div>
   );

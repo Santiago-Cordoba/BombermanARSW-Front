@@ -1,0 +1,198 @@
+.retro-waiting-room {
+  background-color: rgba(0, 0, 0, 0.85);
+  border: 8px solid #ffeb3b;
+  border-radius: 10px;
+  padding: 30px;
+  width: 90%;
+  max-width: 800px;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 0 30px #ff5722;
+  max-height: 90vh;
+  overflow-y: auto;
+  font-family: 'Press Start 2P', cursive;
+}
+
+.retro-title {
+  color: #ffeb3b;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  text-shadow: 4px 4px 0 #ff5722;
+}
+
+.connection-info {
+  margin-bottom: 30px;
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 3px solid #4caf50;
+  border-radius: 5px;
+}
+
+.highlight {
+  color: #ff5722;
+}
+
+.connection-status {
+  color: #4caf50;
+}
+
+.host-marker {
+  color: #ffeb3b;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.error-message {
+  color: #f44336;
+  font-size: 0.8rem;
+  margin-top: 10px;
+}
+
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.player-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 3px solid #2196f3;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+.player-card.ready {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.player-card.current-player {
+  border-color: #ffeb3b;
+  background-color: rgba(255, 235, 59, 0.1);
+}
+
+.player-name {
+  color: #2196f3;
+  flex: 1;
+  text-align: left;
+}
+
+.player-status {
+  flex: 1;
+  text-align: right;
+}
+
+.player-card.ready .player-status {
+  color: #4caf50;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.retro-ready-button, 
+.retro-start-button,
+.retro-leave-button,
+.kick-button {
+  padding: 15px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.retro-ready-button {
+  background-color: #2196f3;
+  color: white;
+}
+
+.retro-ready-button:hover {
+  background-color: #0d8bf2;
+  transform: translateY(-3px);
+}
+
+.retro-start-button {
+  background-color: #4caf50;
+  color: white;
+}
+
+.retro-start-button:hover {
+  background-color: #3e8e41;
+  transform: translateY(-3px);
+}
+
+.retro-start-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.retro-leave-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.retro-leave-button:hover {
+  background-color: #d32f2f;
+  transform: translateY(-3px);
+}
+
+.kick-button {
+  background-color: #ff5722;
+  color: white;
+  font-size: 0.7rem;
+  padding: 8px 12px;
+  margin-left: 10px;
+}
+
+.kick-button:hover {
+  background-color: #e64a19;
+  transform: translateY(-2px);
+}
+
+/* Efectos retro */
+.retro-waiting-room::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 10px 10px;
+  pointer-events: none;
+  border-radius: 2px;
+}
+
+@media (max-width: 768px) {
+  .retro-waiting-room {
+    width: 95%;
+    padding: 20px;
+  }
+  
+  .retro-title {
+    font-size: 2rem;
+  }
+  
+  .player-card {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .player-name, .player-status {
+    text-align: center;
+    width: 100%;
+  }
+}

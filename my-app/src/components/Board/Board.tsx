@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import HUD from "../Hud/Hud";
-import { PlayerController } from "../PlayerMovement";
+import { PlayerController } from "../playerMove/PlayerMovement";
 import { SoundPlayer } from "../SoundBomb";
 import { WallManager } from "../wall";
-import { BombManager } from "../bomb";
+import { BombManager } from "../bomb/bomb";
 import playerImage from '../../images/Player.png';
 import boomSound from '../../assets/sounds/boom2.mp3';
 import "./Board.css";
