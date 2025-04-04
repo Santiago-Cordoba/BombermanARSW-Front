@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import bombImage from '../images/bomb.png';
+import bombImage from '../../images/bomb.png';
 
 interface Position {
   row: number;

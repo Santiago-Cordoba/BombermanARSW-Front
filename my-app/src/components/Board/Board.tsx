@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import HUD from "../Hud/Hud";
-import { PlayerController } from "../PlayerMovement";
+import { PlayerController } from "../playerMove/PlayerMovement";
 import { SoundPlayer } from "../SoundBomb";
-import { WallManager } from "../wall";
-import { BombManager } from "../bomb";
-import playerImage from '../../images/Player.png';
+import { BombManager } from "../bomb/bomb";
+import playerImage from "../../images/p1.png";
+import player2Image from "../../images/p2.png";
+import player3Image from "../../images/p3.png";
+import player4Image from "../../images/p4.png";
 import boomSound from '../../assets/sounds/boom2.mp3';
 import "./Board.css";
 import "../Hud/Hud.css";
@@ -16,61 +18,59 @@ interface Position {
 }
 
 interface Player {
-  id: number;
-  position: Position;
+  id: string;
+  name: string;
+  row: number;
+  col: number;
   lives: number;
+  isCurrent?: boolean;
 }
 
 interface BoardProps {
   config?: {
     duration?: number;
     players?: number;
-    blocks?: number;
     lives?: number;
   };
+  players?: Player[];
+  roomCode?: string;
 }
 
 type CellType = '0' | '1' | 'P' | 'O' | 'X';
 
-const Board: React.FC<BoardProps> = ({ config = {} }) => {
-  const size = 13;
-  const center = Math.floor(size / 2);
-  const initialTimeInSeconds = (config.duration || 2) * 60;
+const Board: React.FC<BoardProps> = ({ config = {}, players: initialPlayers = [], roomCode = '' }) => {
+  const size = 15;
+  const initialTimeInSeconds = (config.duration || 3) * 60;
   const [shouldPlayBoomSound, setShouldPlayBoomSound] = useState(false);
   const damageCooldownRef = useRef(false);
   const explosionIdRef = useRef(0);
-
   const maxLives = config.lives !== undefined ? config.lives : 3;
 
+  // Estado para los jugadores
   const [players, setPlayers] = useState<Player[]>(() => {
-    const initialPlayers: Player[] = [];
-    const playerCount = config.players || 1;
-    
-    const positions = [
-      { row: center, col: center },
-      { row: center - 2, col: center - 2 },
-      { row: center - 2, col: center + 2 },
-      { row: center + 2, col: center - 2 },
-    ];
-    
-    for (let i = 0; i < playerCount; i++) {
-      initialPlayers.push({
-        id: i,
-        position: positions[i],
-        lives: maxLives // Todos inician con maxLives
-      });
+    if (initialPlayers.length > 0) {
+      return initialPlayers.map((player, index) => ({
+        ...player,
+        isCurrent: index === 0
+      }));
     }
     
-    return initialPlayers;
+    const center = Math.floor(size / 2);
+    return [{
+      id: 'player-1',
+      name: 'Player 1',
+      row: center,
+      col: center,
+      lives: maxLives,
+      isCurrent: true
+    }];
   });
 
-  const mainPlayer = players[0];
-  const otherPlayers = players.slice(1);
+  const currentPlayer = players.find(p => p.isCurrent) || players[0];
 
   const [gameState, setGameState] = useState({
-    lives: maxLives,
     timeLeftInSeconds: initialTimeInSeconds,
-    playersLeft: config.players || 1,
+    playersLeft: players.length,
     score: 0
   });
 
@@ -81,69 +81,65 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
 
   const [explosions, setExplosions] = useState<Position[]>([]);
 
+  // Efecto para verificar estado del juego
   useEffect(() => {
-    const alivePlayers = players.filter(p => p.lives > 0).length;
-    const mainPlayerLives = players[0]?.lives || 0;
-    
-    setGameState(prev => ({
-      ...prev,
-      playersLeft: alivePlayers,
-      lives: mainPlayerLives
-    }));
-
-    if (mainPlayerLives <= 0 && !gameOver.isOver) {
+    if (gameOver.isOver) return;
+  
+    const alivePlayers = players.filter(p => p.lives > 0);
+    const currentPlayerAlive = currentPlayer?.lives > 0;
+  
+    if (!currentPlayerAlive) {
       setGameOver({
         isOver: true,
         message: '¡HAS PERDIDO!'
       });
-    } else if (alivePlayers === 1 && players[0].lives > 0 && !gameOver.isOver) {
+    } else if (alivePlayers.length === 1) {
       setGameOver({
         isOver: true,
         message: '¡Has ganado la partida!'
       });
     }
-  }, [players]);
+  
+    setGameState(prev => ({
+      ...prev,
+      playersLeft: alivePlayers.length
+    }));
+  }, [players, gameOver.isOver, currentPlayer?.lives]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setGameState(prev => {
-        const newTime = prev.timeLeftInSeconds - 1;
-        
-        if (newTime <= 0) {
-          clearInterval(timer);
-          
-          if (prev.playersLeft > 1) {
-            setGameOver({
-              isOver: true,
-              message: '¡La partida ha quedado en empate!'
-            });
-          } else if (prev.playersLeft === 1) {
-            setGameOver({
-              isOver: true,
-              message: '¡Has ganado la partida!'
-            });
-          } else {
-            setGameOver({
-              isOver: true,
-              message: '¡Juego terminado!'
-            });
-          }
-          
-          return { ...prev, timeLeftInSeconds: 0 };
-        }
-        
-        return { ...prev, timeLeftInSeconds: newTime };
-      });
-    }, 1000);
+  // Efecto para el temporizador
+  // Efecto para verificar estado del juego
+useEffect(() => {
+  if (gameOver.isOver) return;
 
-    return () => clearInterval(timer);
-  }, []);
+  const alivePlayers = players.filter(p => p.lives > 0);
+  const currentPlayerAlive = currentPlayer?.lives > 0;
+
+  // Solo verificar condiciones de fin de juego si hay más de un jugador
+  // o si el jugador actual ha perdido todas sus vidas
+  if (!currentPlayerAlive) {
+    setGameOver({
+      isOver: true,
+      message: '¡HAS PERDIDO!'
+    });
+  } else if (players.length > 1 && alivePlayers.length === 1) {
+    // Solo mostrar mensaje de victoria si había múltiples jugadores
+    setGameOver({
+      isOver: true,
+      message: '¡Has ganado la partida!'
+    });
+  }
+
+  setGameState(prev => ({
+    ...prev,
+    playersLeft: alivePlayers.length
+  }));
+}, [players, gameOver.isOver, currentPlayer?.lives]);
 
   const handlePowerUpCollect = () => {
     setPlayers(prevPlayers => 
-      prevPlayers.map((player, index) => 
-        index === 0 && player.lives < maxLives 
-          ? { ...player, lives: player.lives + 1 } 
+      prevPlayers.map(player => 
+        player.isCurrent && player.lives < maxLives
+          ? { ...player, lives: player.lives + 1 }
           : player
       )
     );
@@ -171,11 +167,11 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
     if (!damageCooldownRef.current) {
       setPlayers(prevPlayers => 
         prevPlayers.map(player => {
-          const isInExplosion = explosionPositions.some(
-            exp => exp.row === player.position.row && exp.col === player.position.col
+          const isPlayerInExplosion = explosionPositions.some(
+            exp => exp.row === player.row && exp.col === player.col
           );
           
-          if (isInExplosion) {
+          if (isPlayerInExplosion && player.isCurrent) {
             damageCooldownRef.current = true;
             setTimeout(() => {
               damageCooldownRef.current = false;
@@ -202,12 +198,22 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
     return Array(size).fill(0).map((_, row) => {
       return Array(size).fill(0).map((_, col): CellType => {
         if (row === 0 || row === size-1 || col === 0 || col === size-1) return '1';
-        if (row === mainPlayer.position.row && col === mainPlayer.position.col && mainPlayer.lives > 0) return 'P';
-        if (otherPlayers.some(p => p.position.row === row && p.position.col === col && p.lives > 0)) return 'O';
+        if (players.some(p => p.row === row && p.col === col)) return 'P';
         if (explosions.some(exp => exp.row === row && exp.col === col)) return 'X';
         return '0';
       });
     });
+  };
+
+  const getPlayerImage = (playerId: string) => {
+    const playerIndex = players.findIndex(p => p.id === playerId);
+    switch(playerIndex % 4) {
+      case 0: return playerImage;
+      case 1: return player2Image;
+      case 2: return player3Image;
+      case 3: return player4Image;
+      default: return playerImage;
+    }
   };
 
   const renderCell = (cell: CellType, rowIndex: number, colIndex: number) => {
@@ -219,29 +225,45 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       'X': 'explosion'
     };
 
+    if (cell === 'P') {
+      const player = players.find(p => p.row === rowIndex && p.col === colIndex);
+      if (player) {
+        return (
+          <div 
+            className={`game-cell ${cellTypes[cell]} ${player.isCurrent ? 'current-player' : ''}`}
+            key={`player-${player.id}`}
+            style={{ 
+              backgroundImage: `url(${getPlayerImage(player.id)})`,
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'center',
+              backgroundColor: 'transparent',
+              border: player.isCurrent ? '2px solid yellow' : 'none'
+            }}
+            title={player.name}
+          />
+        );
+      }
+    }
+
     return (
       <div 
         className={`game-cell ${cellTypes[cell]}`}
         key={`${rowIndex}-${colIndex}`}
-        style={
-          cell === 'P' ? { 
-            backgroundImage: `url(${playerImage})`,
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            backgroundColor: 'transparent'
-          } : 
-          cell === 'O' ? {
-            backgroundImage: `url(${playerImage})`,
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            backgroundColor: 'transparent',
-            opacity: 0.7
-          } : {}
-        }
       />
     );
+  };
+
+  const handlePlayerMove = (newPosition: Position) => {
+    if (currentPlayer) {
+      setPlayers(prevPlayers => 
+        prevPlayers.map(player => 
+          player.isCurrent
+            ? { ...player, row: newPosition.row, col: newPosition.col }
+            : player
+        )
+      );
+    }
   };
 
   return (
@@ -253,72 +275,57 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
       />
       
       <HUD 
-        lives={mainPlayer.lives}
         timeLeft={formatTime(gameState.timeLeftInSeconds)}
-        playersLeft={gameState.playersLeft}
         score={gameState.score}
+        roomCode={roomCode}
+        lives={currentPlayer?.lives || 0}
       />
       
-      <WallManager 
-        size={size} 
-        center={{ row: center, col: center }} 
-        blocks={config.blocks || 0} 
-        explosions={explosions}
+      <BombManager 
+        onBombPlaced={handleBombPlaced}
+        onBombExplode={handleBombExplode}
       >
-        {(renderWall, walls) => (
-          <BombManager 
-            onBombPlaced={handleBombPlaced}
-            onBombExplode={handleBombExplode}
+        {(bombs, placeBomb, renderBomb) => (
+          <PowerUpManager
+            boardSize={size}
+            playerPosition={{ row: currentPlayer?.row || 0, col: currentPlayer?.col || 0 }}
+            maxLives={maxLives}
+            currentLives={currentPlayer?.lives || 0}
+            onCollect={handlePowerUpCollect}
           >
-            {(bombs, placeBomb, renderBomb) => (
-              <PowerUpManager
+            {(renderPowerUp) => (
+              <PlayerController
+                initialPosition={{ row: currentPlayer?.row || 0, col: currentPlayer?.col || 0 }}
                 boardSize={size}
-                playerPosition={mainPlayer.position}
-                maxLives={maxLives}
-                currentLives={mainPlayer.lives}
-                onCollect={handlePowerUpCollect}
-              >
-                {(renderPowerUp) => (
-                  <PlayerController
-                    initialPosition={mainPlayer.position}
-                    boardSize={size}
-                    onPositionChange={(newPos) => {
-                      setPlayers(prev => 
-                        prev.map((p, i) => i === 0 ? { ...p, position: newPos } : p)
-                      );
-                    }}
-                    onPlaceBomb={() => placeBomb(mainPlayer.position)}
-                    walls={walls}
-                    bombs={bombs}
-                    otherPlayers={otherPlayers
-                      .filter(p => p.lives > 0)
-                      .map(p => p.position)}
-                  >
-                    <div className="game-board">
-                      {generateBoard().map((row, rowIndex) => (
-                        <div className="board-row" key={rowIndex}>
-                          {row.map((cell, colIndex) => {
-                            const wallElement = renderWall(rowIndex, colIndex);
-                            const bombElement = renderBomb(rowIndex, colIndex);
-                            const powerUpElement = renderPowerUp(rowIndex, colIndex);
-                            return wallElement || bombElement || powerUpElement || renderCell(cell, rowIndex, colIndex);
-                          })}
-                        </div>
-                      ))}
+                onPositionChange={handlePlayerMove}
+                onPlaceBomb={() => placeBomb({
+                  row: currentPlayer?.row || 0,
+                  col: currentPlayer?.col || 0
+                })}
+                walls={[]}
+                bombs={bombs} otherPlayers={[]}              >
+                <div className="game-board">
+                  {generateBoard().map((row, rowIndex) => (
+                    <div className="board-row" key={rowIndex}>
+                      {row.map((cell, colIndex) => {
+                        const bombElement = renderBomb(rowIndex, colIndex);
+                        const powerUpElement = renderPowerUp(rowIndex, colIndex);
+                        return bombElement || powerUpElement || renderCell(cell, rowIndex, colIndex);
+                      })}
                     </div>
-                  </PlayerController>
-                )}
-              </PowerUpManager>
+                  ))}
+                </div>
+              </PlayerController>
             )}
-          </BombManager>
+          </PowerUpManager>
         )}
-      </WallManager>
+      </BombManager>
 
       {gameOver.isOver && (
         <div className="retro-game-over-card">
           <div className="retro-game-over-content">
-            <h2 className={`retro-game-over-title ${mainPlayer.lives <= 0 ? 'game-lost' : ''}`}>
-              {mainPlayer.lives <= 0 ? '¡HAS PERDIDO!' : gameOver.message}
+            <h2 className={`retro-game-over-title ${currentPlayer?.lives <= 0 ? 'game-lost' : ''}`}>
+              {gameOver.message}
             </h2>
             <div className="retro-game-over-buttons">
               <button 
@@ -329,9 +336,9 @@ const Board: React.FC<BoardProps> = ({ config = {} }) => {
               </button>
               <button 
                 className="retro-game-over-button secondary"
-                onClick={() => {/* Lógica para menú principal */}}
+                onClick={() => window.location.href = '/'}
               >
-                Menú
+                Menú Principal
               </button>
             </div>
           </div>
