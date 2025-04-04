@@ -36,6 +36,7 @@ Para empezar a jugar.
 ![imagen](https://github.com/user-attachments/assets/9bd868e8-864a-477a-bd6e-a51fabfae571)
 
 ![imagen](https://github.com/user-attachments/assets/bc06ca29-8b76-43ca-8876-14f58f259cbd)
+![imagen](https://github.com/user-attachments/assets/1a759c37-76dc-4724-9826-f2e95a7eb64f)
 
 
 
