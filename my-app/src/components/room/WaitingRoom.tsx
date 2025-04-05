@@ -56,6 +56,7 @@ const RetroWaitingRoom: React.FC<RetroWaitingRoomProps> = ({
                         <span className="player-name">
                             {player.name} 
                             {player.host && <span className="host-badge"> (Host)</span>}
+                            {player.name === currentPlayerName && <span className="you-badge"> (Tú)</span>}
                         </span>
                         <span className="player-status">
                             {player.ready ? ' LISTO' : ' ESPERANDO'}

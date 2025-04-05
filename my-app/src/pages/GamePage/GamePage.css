@@ -1,150 +1,78 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    image-rendering: pixelated;
-  }
-  
-  body, html {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    font-family: 'Press Start 2P', cursive;
-  }
-  
-  .game-page {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-image: url('../../images/f1.png');
-    background-size: cover;
-    background-position: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  .board-container {
-    background-color: rgba(0, 0, 0, 0.85);
-    border: 8px solid #ffeb3b;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 0 30px #ff5722;
-    max-width: 90%;
-    max-height: 90vh;
-    position: relative;
-    overflow: auto;
-  }
-  
-  .board-container::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-      linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-    background-size: 10px 10px;
-    pointer-events: none;
-    border-radius: 2px;
-    z-index: -1;
-  }
-  
-  .game-board {
-    display: inline-block;
-    border: 4px solid #4caf50;
-    background-color: rgba(0, 0, 0, 0.7);
-    box-shadow: inset 0 0 20px rgba(76, 175, 80, 0.3);
-  }
-  
-  .board-row {
-    display: flex;
-  }
+.game-container {
+  padding: 20px;
+  background-color: #222;
+  min-height: 20vh;
+  color: white;
+}
 
-  .game-cell {
-    width: 40px;
-    height: 40px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative;
-  }
-  
-  .empty-cell {
-    background-color: #4a752c; 
-  }
-  
-  .empty-cell::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2px;
-    height: 2px;
-    background-color: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-  }
-  
-  .solid-block {
-    background-color: #555;
-    background-image: 
-      linear-gradient(45deg, #444 25%, transparent 25%),
-      linear-gradient(-45deg, #444 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #444 75%),
-      linear-gradient(-45deg, transparent 75%, #444 75%);
-    background-size: 10px 10px;
-  }
-  
-  .destructible-block {
-    background-color: #8b5a2b;
-    background-image: 
-      linear-gradient(to right, #a67c52, #8b5a2b, #a67c52);
-    border: 2px solid #6d4c2e;
-  }
-  
-  .player {
-    background-color: #ff5722;
-    border-radius: 50%;
-    animation: pulse 0.8s infinite alternate;
-    z-index: 2;
-  }
-  
-  .player::after {
-    content: "";
-    position: absolute;
-    top: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 8px;
-    height: 4px;
-    background-color: #ff9800;
-    border-radius: 50% 50% 0 0;
-  }
-  
-  /* Animaciones */
-  @keyframes pulse {
-    from { box-shadow: 0 0 3px #ff5722; }
-    to { box-shadow: 0 0 10px #ff5722; }
-  }
-  
-  /* Responsive design */
-  @media (max-width: 768px) {
-    .game-cell {
-      width: 30px;
-      height: 30px;
-    }
-    
-    .board-container {
-      padding: 15px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .game-cell {
-      width: 24px;
-      height: 24px;
-    }
-  }
+.game-loading {
+  text-align: center;
+  margin-top: 50px;
+}
+
+.game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.game-info {
+  display: flex;
+  gap: 20px;
+}
+
+.game-cell {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.game-cell.empty {
+  background-color: #7cb342;
+}
+
+.game-cell.wall {
+  background-color: #3a3a3a;
+}
+
+.game-cell.destructible {
+  background-color: #8d6e63;
+}
+
+.game-player {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.player-1 {
+  background-color: #ff5252;
+}
+
+.player-2 {
+  background-color: #4fc3f7;
+}
+
+.game-power-up {
+  width: 12px;
+  height: 12px;
+  background-color: gold;
+  border-radius: 50%;
+  animation: spin 2s infinite linear;
+}
+
+@keyframes pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

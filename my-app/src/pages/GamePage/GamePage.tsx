@@ -1,131 +1,126 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import Board from "../../components/Board/Board";
+import React, { useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { useWebSocket } from '../../components/Socket/WebSocketProvider';
 import './GamePage.css';
-import { Client } from '@stomp/stompjs';
 
-interface GameConfig {
-  duration?: number;
-  players?: number;
-  lives?: number;
-}
+// Tipos mejorados
+type GameConfig = {
+  duration: number;
+  lives: number;
+};
 
-interface Player {
+type Player = {
   id: string;
   name: string;
-  row: number;
-  col: number;
-  lives: number;
-}
+  x: number;
+  y: number;
+};
+
+type GameCell = {
+  isDestructible: boolean;
+  hasPowerUp: boolean;
+  x: number;
+  y: number;
+  isWall: boolean;
+};
+
+type GameMap = {
+  width: number;
+  height: number;
+  cells: GameCell[][];
+};
+
+type GameMessage = {
+  type: string;
+  config: GameConfig;
+  players: Player[];
+  map: GameMap;
+};
 
 const GamePage: React.FC = () => {
+  const { roomCode } = useParams<{ roomCode: string }>();
   const location = useLocation();
-  const { roomCode, config: initialConfig, players: initialPlayers } = location.state || {};
-  const [gameConfig, setGameConfig] = useState<GameConfig>(initialConfig || {});
-  const [players, setPlayers] = useState<Player[]>(initialPlayers || []);
-  const stompClientRef = useRef<Client | null>(null);
-  const [loading, setLoading] = useState(!initialPlayers);
+  const [gameState, setGameState] = useState<GameMessage | null>(null);
+  const { subscribe, isConnected } = useWebSocket();
 
   useEffect(() => {
-    // Si ya tenemos los datos iniciales, no necesitamos conectar de nuevo
-    if (initialPlayers && initialPlayers.length > 0) {
-      setLoading(false);
-      return;
+    if (!isConnected || !roomCode) return;
+
+    // Verificar si ya tenemos datos iniciales
+    if (location.state?.initialGameData) {
+      setGameState(location.state.initialGameData);
     }
 
-    console.log(`Initializing WebSocket for room ${roomCode}`);
-    
-    const stompClient = new Client({
-      brokerURL: 'ws://localhost:8080/ws',
-      reconnectDelay: 5000,
-      debug: (str) => console.debug(str),
-      connectHeaders: {
-        'heart-beat': '10000,10000'
+    const subscription = subscribe<GameMessage>(
+      `/topic/game/${roomCode}`,
+      (message) => {
+        if (message.type === 'GAME_START' || message.type === 'GAME_UPDATE') {
+          setGameState(message);
+        }
       }
-    });
-
-    stompClient.onConnect = () => {
-      console.log(`Connected to room ${roomCode}`);
-      
-      const subscriptionId = `sub-${roomCode}-${Date.now()}`;
-      
-      stompClient.subscribe(
-        `/topic/room/${roomCode}`,
-        (message) => {
-          try {
-            const data = JSON.parse(message.body);
-            console.log('Received game data:', data);
-            
-            if (data.type === "GAME_START") {
-              setGameConfig(data.config || {});
-              setPlayers(data.players || []);
-              setLoading(false);
-            }
-          } catch (error) {
-            console.error('Error parsing message:', error);
-            setLoading(false);
-          }
-        },
-        { id: subscriptionId }
-      );
-
-      // Solicitar el estado actual del juego
-      stompClient.publish({
-        destination: `/app/room/${roomCode}/status`,
-        body: JSON.stringify({}),
-        headers: { 'content-type': 'application/json' }
-      });
-    };
-
-    stompClient.onDisconnect = () => {
-      console.log(`Disconnected from room ${roomCode}`);
-    };
-
-    stompClient.onStompError = (frame) => {
-      console.error('Broker reported error:', frame.headers.message);
-      setLoading(false);
-    };
-
-    stompClient.activate();
-    stompClientRef.current = stompClient;
+    );
 
     return () => {
-      console.log(`Cleaning up WebSocket for room ${roomCode}`);
-      if (stompClientRef.current?.connected) {
-        stompClientRef.current.deactivate();
-      }
+      subscription?.unsubscribe();
     };
-  }, [roomCode, initialPlayers]);
+  }, [isConnected, roomCode, subscribe, location.state]);
 
-  if (loading) {
+  if (!gameState) {
     return (
-      <div className="game-page">
-        <div className="loading-message">
-          <p>Conectando al juego...</p>
-          <p>Por favor espere</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (players.length === 0) {
-    return (
-      <div className="game-page">
-        <div className="error-message">
-          <p>No se pudieron cargar los datos del juego</p>
-          <button onClick={() => window.location.href = '/'}>Volver al inicio</button>
-        </div>
+      <div className="game-loading">
+        <h2>Sala: {roomCode}</h2>
+        <p>Cargando juego...</p>
       </div>
     );
   }
 
   return (
-    <div className="game-page">
-      <Board 
-        config={gameConfig} 
-        players={players}
-        roomCode={roomCode}
-      />
+    <div className="game-container">
+      <div className="game-header">
+        <h2>Sala: {roomCode}</h2>
+        <div className="game-info">
+          <span>Tiempo: {Math.floor(gameState.config.duration / 60)}:{String(gameState.config.duration % 60).padStart(2, '0')}</span>
+          <span>Vidas: {gameState.config.lives}</span>
+        </div>
+      </div>
+      
+      <div 
+        className="game-map"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${gameState.map.width}, 32px)`,
+          gridTemplateRows: `repeat(${gameState.map.height}, 32px)`,
+          gap: '2px',
+          backgroundColor: '#111',
+          padding: '10px',
+          borderRadius: '8px'
+        }}
+      >
+        {gameState.map.cells.map((row, y) => (
+          <React.Fragment key={`row-${y}`}>
+            {row.map((cell, x) => {
+              const cellType = cell.isWall 
+                ? cell.isDestructible ? 'destructible' : 'wall' 
+                : 'empty';
+              const player = gameState.players.find(p => p.x === x && p.y === y);
+              
+              return (
+                <div 
+                  key={`cell-${x}-${y}`}
+                  className={`game-cell ${cellType}`}
+                >
+                  {player && (
+                    <div className={`game-player player-${player.name}`} />
+                  )}
+                  {cell.hasPowerUp && !player && (
+                    <div className="game-power-up" />
+                  )}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 };

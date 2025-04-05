@@ -3,14 +3,12 @@ import React from "react";
 
 interface HUDProps {
   timeLeft: string;
-  score: number;
   roomCode: string;
   lives: number;
 }
 
 const HUD: React.FC<HUDProps> = ({ 
   timeLeft, 
-  score, 
   roomCode,
   lives 
 }) => {
@@ -23,7 +21,7 @@ const HUD: React.FC<HUDProps> = ({
       
       <div className="hud-section">
         <div className="hud-lives">Vidas: {lives}</div>
-        <div className="hud-score">Puntos: {score}</div>
+
       </div>
     </div>
   );

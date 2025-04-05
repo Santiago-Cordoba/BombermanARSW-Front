@@ -1,238 +1,111 @@
-.game-board {
-  background-color: rgb(7, 211, 116) !important;
-  grid-template-columns: repeat(13, 40px);
-  grid-template-rows: repeat(13, 40px);
+/* Estilos generales */
+.game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #222;
+  min-height: 100vh;
 }
 
-.empty-cell {
-  background-color: rgb(7, 211, 116) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1); 
+.loading-message {
+  color: white;
+  font-size: 1.5rem;
+  margin-top: 50px;
 }
 
-.solid-block {
-  background-color: #222 !important; 
-  border: 1px solid #444; 
+/* Info del juego */
+.info-container {
+  display: flex;
+  gap: 20px;
+  padding: 15px;
+  background: #333;
+  color: white;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.player {
-  background-image: url('../../images/Player.png');
-  background-size: 80% 80%; 
-  background-repeat: no-repeat;
-  background-position: center;
-  background-color: transparent !important; 
-  border: none !important; 
-  box-shadow: none !important; 
-  animation: pulse 1.5s infinite alternate;
+.info-item {
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
-.player::before, .player::after {
-  content: none !important;
+/* Mapa del juego */
+.map-container {
+  display: grid;
+  gap: 2px;
+  background-color: #111;
+  padding: 10px;
+  border-radius: 8px;
+  border: 3px solid #444;
 }
 
-@keyframes pulse {
-  from { 
-    transform: scale(0.95); 
-    opacity: 0.9;
-  }
-  to { 
-    transform: scale(1.05); 
-    opacity: 1;
-  }
-}
-
-.bomb {
-  background-color: transparent;
-  animation: pulseBomb 0.5s infinite alternate;
-}
-
-@keyframes pulseBomb {
-  from { transform: scale(0.9); opacity: 0.8; }
-  to { transform: scale(1.1); opacity: 1; }
-}
-
-.powerup {
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-/* Explosion effect */
-.explosion {
-  background-color: #ff5722;
-  background-image: radial-gradient(#ffeb3b, #ff5722);
-  animation: explosion-anim 0.5s ease-out;
-  z-index: 1;
-}
-
-@keyframes explosion-anim {
-  0% { transform: scale(0); opacity: 1; }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-.player-hit {
-  animation: hit-anim 0.5s;
-}
-
-@keyframes hit-anim {
-  0% { filter: brightness(2) hue-rotate(0deg); }
-  50% { filter: brightness(0.5) hue-rotate(60deg); }
-  100% { filter: brightness(1) hue-rotate(0deg); }
-}
-
-.wall-destroyed {
-  animation: wall-destroy-anim 0.3s forwards;
-}
-
-@keyframes wall-destroy-anim {
-  0% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0); opacity: 0; }
-}
-
-.retro-game-over-card {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+/* Celdas */
+.cell {
+  width: 32px;
+  height: 32px;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-.retro-game-over-content {
-  background-color: rgba(0, 0, 0, 0.9);
-  border: 4px solid #ffeb3b;
-  border-radius: 8px;
-  padding: 20px;
-  width: 90%;
-  max-width: 400px;
-  color: white;
-  text-align: center;
-  box-shadow: 0 0 20px #ff5722;
-  position: relative;
-  overflow: hidden;
+.cell.empty {
+  background-color: #7cb342; /* Verde - Pasillo transitable */
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-.retro-game-over-content::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: 
-    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px);
-  background-size: 10px 10px;
-  pointer-events: none;
+.cell.wall {
+  background-color: #3a3a3a; /* Gris oscuro - Pared indestructible */
 }
 
-.retro-game-over-title {
-  color: #ffeb3b;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  text-shadow: 2px 2px 0 #ff5722;
-  font-family: 'Press Start 2P', cursive;
+.cell.destructible {
+  background-color: #8d6e63; /* Marrón - Pared destructible */
 }
 
-.retro-game-over-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
+
+
+.cell:hover {
+  filter: brightness(1.1);
 }
 
-.retro-game-over-button {
-  padding: 10px 15px;
-  font-family: 'Press Start 2P', cursive;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: #4CAF50;
-  color: white;
-  flex: 1;
-  max-width: 150px;
+/* Jugadores */
+.player-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  animation: pulse 1.5s infinite alternate;
 }
 
-.retro-game-over-button.secondary {
-  background-color: #f44336;
+.player-1 {
+  background-color: #ff5252;
 }
 
-.retro-game-over-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+.player-2 {
+  background-color: #4fc3f7;
 }
 
-@keyframes scanline {
-  0% { transform: translateY(-100%); }
-  100% { transform: translateY(100%); }
+/* Power-ups */
+.power-up-indicator {
+  width: 12px;
+  height: 12px;
+  background-color: #ffd700;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #ffd700;
+  animation: spin 2s infinite linear;
 }
 
-.retro-game-over-content::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(255, 255, 255, 0.05) 50%,
-    transparent 100%
-  );
-  animation: scanline 6s linear infinite;
-  pointer-events: none;
-}
-
-.game-lost {
-  color: #ff3d3d !important;
-  text-shadow: 2px 2px 0 #8b0000 !important;
-  animation: pulse 0.8s infinite alternate;
-}
-
+/* Animaciones */
 @keyframes pulse {
   from { transform: scale(1); }
-  to { transform: scale(1.05); }
+  to { transform: scale(1.1); }
 }
 
-.game-lost::before,
-.game-lost::after {
-  content: attr(data-text);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.9);
-  clip: rect(0, 0, 0, 0);
-}
-
-.game-lost::before {
-  left: -2px;
-  text-shadow: 2px 0 #ff0000;
-  animation: glitch-anim 2s infinite linear alternate-reverse;
-}
-
-.game-lost::after {
-  left: 2px;
-  text-shadow: -2px 0 #00ffff;
-  animation: glitch-anim 1s infinite linear alternate-reverse;
-}
-
-@keyframes glitch-anim {
-  0% { clip: rect(30px, 9999px, 20px, 0); }
-  20% { clip: rect(10px, 9999px, 80px, 0); }
-  40% { clip: rect(50px, 9999px, 60px, 0); }
-  60% { clip: rect(40px, 9999px, 70px, 0); }
-  80% { clip: rect(60px, 9999px, 30px, 0); }
-  100% { clip: rect(80px, 9999px, 20px, 0); }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
