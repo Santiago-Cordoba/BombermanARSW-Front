@@ -35,7 +35,7 @@ const RoomEntryPage: React.FC = () => {
               id="roomCode"
               type="text"
               value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+              onChange={(e) => setRoomCode(e.target.value)}
               maxLength={12}
               placeholder="Ej: ABC123"
               className="retro-input"

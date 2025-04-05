@@ -9,6 +9,9 @@ interface Player {
     name: string;
     ready: boolean;
     host: boolean;
+    lives: number;
+    bombCapacity: number;
+    bombRange: number;
 }
 
 interface GameConfig {
@@ -36,12 +39,14 @@ interface GameMap {
     cells: GameCell[][];
   }
 
-interface GameStartMessage {
+  interface GameStartMessage {
     type: 'GAME_START';
     config: GameConfig;
     players: Player[];
-    map: GameMap; // Asegúrate de incluir map aquí
+    map: GameMap;
   }
+  
+
 
 type SocketMessage = PlayerUpdateMessage | GameStartMessage;
 
@@ -92,12 +97,13 @@ const WaitingRoomPage: React.FC = () => {
                             const currentPlayer = message.players.find(p => p.name === playerName);
                             navigate(`/game/${roomCode}`, { 
                                 state: { 
-                                initialGameData: {
-                                    config: message.config || {},
-                                    players: message.players,
-                                    map: message.map
-                                },
-                                playerId: currentPlayer?.id // Add this line
+                                    initialGameData: {
+                                        config: message.config || {},
+                                        players: message.players || [],
+                                        map: message.map || { width: 0, height: 0, cells: [] },
+                                        powerUps: []
+                                    },
+                                    playerId: currentPlayer?.id
                                 } 
                             });
                             break;

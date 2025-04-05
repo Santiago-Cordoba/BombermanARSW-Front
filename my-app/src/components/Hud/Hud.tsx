@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
+import './HUD.css';
 
 interface HUDProps {
   initialTime: number; 
   roomCode: string;
   lives: number;
   isRunning?: boolean; 
-  onTimeEnd?: () => void; 
+  onTimeEnd?: () => void;
+  showLifeGained?: boolean;
 }
 
 const HUD: React.FC<HUDProps> = ({ 
@@ -13,7 +15,8 @@ const HUD: React.FC<HUDProps> = ({
   roomCode,
   lives,
   isRunning = true,
-  onTimeEnd
+  onTimeEnd,
+  showLifeGained = false
 }) => {
   const [timeLeft, setTimeLeft] = useState(initialTime);
 
@@ -47,12 +50,15 @@ const HUD: React.FC<HUDProps> = ({
   return (
     <div className="hud-container">
       <div className="hud-section">
-        <div className="hud-room-code">Sala: {roomCode}</div>
-        <div className="hud-time">Tiempo: {formatTime(timeLeft)}</div>
+        <div className="hud-room-code">Room: {roomCode}</div>
+        <div className="hud-time">Time: {formatTime(timeLeft)}</div>
       </div>
       
       <div className="hud-section">
-        <div className="hud-lives">Vidas: {lives}</div>
+        <div className="hud-lives">
+          Lives: {lives}
+          {showLifeGained && <span className="life-gained">+1</span>}
+        </div>
       </div>
     </div>
   );
