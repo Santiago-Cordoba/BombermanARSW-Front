@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useParams, useLocation } from 'react-router-dom';
 import { useWebSocket } from '../../components/Socket/WebSocketProvider';
 import './GamePage.css';
+import HUD from '../../components/Hud/Hud'
 
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'BOMB';
 
@@ -243,86 +244,97 @@ const GamePage: React.FC = () => {
   }, [gameState?.map, defaultMap]);
 
   if (loading || !gameState || !currentPlayerId) {
-    return (
-      <div className="game-loading">
-        <h2>Sala: {roomCode}</h2>
-        <p>Cargando juego...</p>
-        <div className="debug-info">
-          <p>Estado de carga:</p>
-          <ul>
-            <li>GameState: {gameState ? 'Cargado' : 'No cargado'}</li>
-            <li>PlayerID: {currentPlayerId || 'No definido'}</li>
-            <li>Conexión WebSocket: {isConnected ? 'Activa' : 'Inactiva'}</li>
-            <li>Mapa: {gameState?.map ? 'Cargado' : 'No cargado'}</li>
-          </ul>
-        </div>
-      </div>
-    );
-  }
-
-  const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
-  const displayMap = gameState.map || defaultMap;
-  const displayConfig = gameState.config || defaultConfig;
-
   return (
-    <div className="game-container" ref={gameContainerRef} tabIndex={0}>
-      <div className="game-header">
-        <h2>Sala: {roomCode}</h2>
-        <div className="game-info">
-          <span>Tiempo: {Math.floor(displayConfig.duration / 60)}:
-          {String(displayConfig.duration % 60).padStart(2, '0')}</span>
-          <span>Vidas: {displayConfig.lives}</span>
-          {currentPlayer && <span>Bombas: {currentPlayer.bombCapacity}</span>}
-        </div>
-      </div>
-      
-      <div 
-        className="game-map"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${displayMap.width}, 32px)`,
-          gridTemplateRows: `repeat(${displayMap.height}, 32px)`,
-          gap: '2px',
-          backgroundColor: '#111',
-          padding: '10px',
-          borderRadius: '8px'
-        }}
-      >
-        {displayMap.cells.map((row, y) => (
-          <React.Fragment key={`row-${y}`}>
-            {row.map((cell, x) => {
-              const cellType = cell?.isWall 
-                ? cell?.isDestructible ? 'destructible' : 'wall' 
-                : 'empty';
-              const player = gameState.players.find(p => p.x === x && p.y === y);
-              
-              return (
-                <div key={`cell-${x}-${y}`} className={`game-cell ${cellType}`}>
-                  {player && (
-                    <div className={`game-player player-${player.name} ${
-                      player.id === currentPlayerId ? 'current-player' : ''
-                    }`}>
-                      {player.id === currentPlayerId && (
-                        <div className="player-indicator"></div>
-                      )}
-                    </div>
-                  )}
-                  {cell?.hasPowerUp && !player && (
-                    <div className="game-power-up" />
-                  )}
-                </div>
-              );
-            })}
-          </React.Fragment>
-        ))}
-      </div>
-
-      <div className="game-controls">
-        <p>Controles: Flechas o WASD para mover, Espacio para bombas</p>
-        <p className="player-id">Jugador: {currentPlayerId}</p>
+    <div className="game-loading">
+      <h2>Sala: {roomCode}</h2>
+      <p>Cargando juego...</p>
+      <div className="debug-info">
+        <p>Estado de carga:</p>
+        <ul>
+          <li>GameState: {gameState ? 'Cargado' : 'No cargado'}</li>
+          <li>PlayerID: {currentPlayerId || 'No definido'}</li>
+          <li>Conexión WebSocket: {isConnected ? 'Activa' : 'Inactiva'}</li>
+          <li>Mapa: {gameState?.map ? 'Cargado' : 'No cargado'}</li>
+        </ul>
       </div>
     </div>
   );
-};
+}
+
+const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
+const displayMap = gameState.map || defaultMap;
+const displayConfig = gameState.config || defaultConfig;
+
+return (
+  <div className="game-container" ref={gameContainerRef} tabIndex={0}>
+    <div className="game-header">
+      <HUD
+        initialTime={displayConfig.duration}
+        roomCode={roomCode || ''}
+        lives={displayConfig.lives}
+        isRunning={true}
+        onTimeEnd={() => {
+          // Lógica cuando el tiempo termina
+          console.log('¡Se acabó el tiempo!');
+          // Puedes enviar un mensaje al servidor o manejar el fin del juego
+        }}
+      />
+      {currentPlayer && (
+        <div className="player-bombs">
+          Bombas: {currentPlayer.bombCapacity}
+        </div>
+      )}
+    </div>
+    
+    <div 
+      className="game-map"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${displayMap.width}, 32px)`,
+        gridTemplateRows: `repeat(${displayMap.height}, 32px)`,
+        gap: '2px',
+        backgroundColor: '#111',
+        padding: '10px',
+        borderRadius: '8px'
+      }}
+    >
+      {displayMap.cells.map((row, y) => (
+        <React.Fragment key={`row-${y}`}>
+          {row.map((cell, x) => {
+            const cellType = cell?.isWall 
+              ? cell?.isDestructible ? 'destructible' : 'wall' 
+              : 'empty';
+            const player = gameState.players.find(p => p.x === x && p.y === y);
+            
+            return (
+              <div key={`cell-${x}-${y}`} className={`game-cell ${cellType}`}>
+                {player && (
+                  <div className={`game-player player-${player.name} ${
+                    player.id === currentPlayerId ? 'current-player' : ''
+                  }`}>
+                    {player.id === currentPlayerId && (
+                      <div className="player-indicator"></div>
+                    )}
+                  </div>
+                )}
+                {cell?.hasPowerUp && !player && (
+                  <div className="game-power-up" />
+                )}
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </div>
+
+    <div className="game-controls">
+      <p>Controles: Flechas o WASD para mover, Espacio para bombas</p>
+      <p className="player-info">
+        Jugador: <span className="player-name">{currentPlayer?.name || currentPlayerId}</span>
+      </p>
+    </div>
+  </div>
+);
+}
 
 export default GamePage;
