@@ -1,227 +1,141 @@
 .game-container {
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
   background-color: #222;
-  min-height: 100vh;
   color: white;
-  outline: none;
   font-family: 'Arial', sans-serif;
-}
-
-.game-container:focus {
   outline: none;
-}
-
-.game-loading {
-  text-align: center;
-  margin-top: 50px;
-  padding: 20px;
-}
-
-.debug-info {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #333;
-  border-radius: 8px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: left;
-}
-
-.debug-info ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-.debug-info li {
-  margin: 5px 0;
-  padding: 5px;
-  background-color: #444;
-  border-radius: 4px;
 }
 
 .game-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  max-width: 800px;
   margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px;
-  background-color: #333;
-  border-radius: 8px;
+  padding: 0 20px;
 }
 
-.game-info {
+.player-stats {
   display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.game-info span {
-  background-color: #444;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  gap: 20px;
+  font-size: 18px;
 }
 
 .game-map {
-  margin: 0 auto;
-  user-select: none;
+  position: relative;
+  margin-bottom: 20px;
 }
 
 .game-cell {
+  position: relative;
   width: 32px;
   height: 32px;
+  background-color: #3a3a3a;
   display: flex;
-  justify-content: center;
   align-items: center;
-  border-radius: 4px;
-  position: relative;
-  transition: background-color 0.2s;
-}
-
-.game-cell.empty {
-  background-color: #7cb342;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+  justify-content: center;
 }
 
 .game-cell.wall {
-  background-color: #3a3a3a;
+  background-color: #555;
+  background-image: url('../../images/wall.png');
+  background-size: cover;
 }
 
 .game-cell.destructible {
-  background-color: #8d6e63;
+  background-color: #8B4513;
+  background-image: url('../../images/destructible-wall.png');
+  background-size: cover;
 }
 
 .game-player {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
   position: relative;
-  animation: pulse 1.5s infinite alternate;
-}
-
-.game-player.current-player {
-  animation: pulse 0.8s infinite alternate;
-  border-color: gold;
-}
-
-.player-1 {
-  background-color: #ff5252;
-}
-
-.player-2 {
-  background-color: #4fc3f7;
-}
-
-.player-indicator {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 10px;
-  height: 10px;
-  background-color: white;
-  border-radius: 50%;
-  border: 1px solid black;
-}
-
-.game-power-up {
-  width: 12px;
-  height: 12px;
-  background-color: gold;
-  border-radius: 50%;
-  box-shadow: 0 0 5px gold;
-  animation: spin 2s infinite linear;
-}
-
-.game-controls {
-  margin-top: 20px;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #aaa;
-  padding: 10px;
-  background-color: #333;
-  border-radius: 8px;
-}
-
-.player-id {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  word-break: break-all;
-  background-color: #444;
-  padding: 5px;
-  border-radius: 4px;
-}
-
-/* Animaciones */
-@keyframes pulse {
-  from { transform: scale(1); }
-  to { transform: scale(1.1); }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Efectos de movimiento */
-.game-player.moving {
-  animation: move-bounce 0.3s ease;
-}
-
-@keyframes move-bounce {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(0, -3px); }
-  100% { transform: translate(0, 0); }
-}
-
-/* Animación de bomba */
-.game-bomb {
-  width: 24px;
-  height: 24px;
-  background-color: #333;
-  border-radius: 50%;
-  margin: 4px;
-  animation: pulse 1s infinite alternate;
-}
-
-@keyframes pulse {
-  from { transform: scale(0.9); }
-  to { transform: scale(1.1); }
-}
-
-/* Animación de explosión */
-.explosion {
-  position: relative;
-  z-index: 10;
-}
-
-.explosion::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
-  background-color: #ff5722;
-  border-radius: 2px;
-  animation: explode 0.5s ease-out forwards;
-  opacity: 0.8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
 }
 
-@keyframes explode {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 0; }
-}
-
-/* Power-ups */
-.game-power-up {
+.player-avatar {
   width: 24px;
   height: 24px;
+  object-fit: contain;
+}
+
+.current-player .player-indicator {
+  position: absolute;
+  bottom: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: yellow;
+  border-radius: 50%;
+}
+
+.game-bomb {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  top: 4px;
+  left: 4px;
+  background-image: url('../../images/bomb.png');
+  background-size: cover;
+  border-radius: 50%;
+  animation: bomb-pulse 0.5s infinite alternate;
+  z-index: 2;
+}
+
+@keyframes bomb-pulse {
+  from { transform: scale(0.9); opacity: 0.8; }
+  to { transform: scale(1.1); opacity: 1; }
+}
+
+.explosion {
+  position: relative;
+  z-index: 1;
+}
+
+.explosion-center {
+  background: radial-gradient(circle, #ff5722 0%, #ff9800 70%, transparent 100%);
+  animation: explode-center 0.5s forwards;
+  box-shadow: 0 0 10px 5px rgba(255, 87, 34, 0.7);
+}
+
+.explosion-arm {
+  background: linear-gradient(
+    to right, 
+    rgba(255, 152, 0, 0.7) 0%, 
+    rgba(255, 87, 34, 1) 50%, 
+    rgba(255, 152, 0, 0.7) 100%
+  );
+  animation: explode-arm 0.5s forwards;
+}
+
+@keyframes explode-center {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+@keyframes explode-arm {
+  0% { transform: scale(0.1, 1); opacity: 0; }
+  50% { transform: scale(1.2, 1); opacity: 1; }
+  100% { transform: scale(1, 1); opacity: 0.8; }
+}
+
+
+.game-power-up {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  top: 4px;
+  left: 4px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -229,7 +143,7 @@
   font-weight: bold;
   font-size: 12px;
   color: white;
-  margin: 4px;
+  z-index: 2;
 }
 
 .game-power-up.bomb {
@@ -242,4 +156,66 @@
 
 .game-power-up.speed {
   background-color: #2196F3;
+}
+
+.game-controls {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.player-info {
+  font-size: 18px;
+  margin: 10px 0;
+}
+
+.player-name {
+  font-weight: bold;
+  color: #4CAF50;
+}
+
+.power-up-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.power-up-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.power-up-icon.bomb {
+  background-color: #4CAF50;
+}
+
+.power-up-icon.fire {
+  background-color: #F44336;
+}
+
+.power-up-icon.speed {
+  background-color: #2196F3;
+}
+
+.game-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #222;
+  color: white;
+  font-family: 'Arial', sans-serif;
 }

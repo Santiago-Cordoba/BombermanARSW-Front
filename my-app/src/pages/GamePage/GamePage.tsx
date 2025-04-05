@@ -57,6 +57,7 @@ type Explosion = {
   x: number;
   y: number;
   timer: number;
+  isCenter?: boolean;
 };
 
 type GameMap = {
@@ -113,7 +114,6 @@ const GamePage: React.FC = () => {
     lives: 3
   }), []);
 
-  // Game loop para manejar bombas y explosiones localmente
   const gameLoop = useCallback(() => {
     setBombs(prevBombs => {
       const updatedBombs = prevBombs.map(bomb => ({
@@ -121,29 +121,29 @@ const GamePage: React.FC = () => {
         timer: bomb.timer - 1
       })).filter(bomb => bomb.timer > 0);
 
-      // Detectar bombas que han terminado su timer
       const explodedBombs = prevBombs.filter(bomb => bomb.timer <= 0 && !updatedBombs.some(b => b.id === bomb.id));
 
       if (explodedBombs.length > 0) {
-        // Crear explosiones para cada bomba que explotó
         const newExplosions: Explosion[] = [];
         
         explodedBombs.forEach(bomb => {
-          // Explosión central
-          newExplosions.push({ x: bomb.x, y: bomb.y, timer: 10 });
+          newExplosions.push({ 
+            x: bomb.x, 
+            y: bomb.y, 
+            timer: 20,
+            isCenter: true 
+          });
           
-          // Explosión en cruz (arriba, abajo, izquierda, derecha)
           for (let i = 1; i <= bomb.range; i++) {
-            if (bomb.y - i >= 0) newExplosions.push({ x: bomb.x, y: bomb.y - i, timer: 10 });
-            if (bomb.y + i < defaultMap.height) newExplosions.push({ x: bomb.x, y: bomb.y + i, timer: 10 });
-            if (bomb.x - i >= 0) newExplosions.push({ x: bomb.x - i, y: bomb.y, timer: 10 });
-            if (bomb.x + i < defaultMap.width) newExplosions.push({ x: bomb.x + i, y: bomb.y, timer: 10 });
+            if (bomb.y - i >= 0) newExplosions.push({ x: bomb.x, y: bomb.y - i, timer: 20, isCenter: false });
+            if (bomb.y + i < defaultMap.height) newExplosions.push({ x: bomb.x, y: bomb.y + i, timer: 20, isCenter: false });
+            if (bomb.x - i >= 0) newExplosions.push({ x: bomb.x - i, y: bomb.y, timer: 20, isCenter: false });
+            if (bomb.x + i < defaultMap.width) newExplosions.push({ x: bomb.x + i, y: bomb.y, timer: 20, isCenter: false });
           }
         });
 
         setExplosions(prev => [...prev, ...newExplosions]);
         
-        // Verificar si algún jugador está en el rango de explosión
         if (gameState) {
           const playersInExplosion = gameState.players.filter(player => 
             newExplosions.some(exp => exp.x === player.x && exp.y === player.y)
@@ -154,7 +154,6 @@ const GamePage: React.FC = () => {
           }
         }
         
-        // Verificar si alguna pared destructible está en el rango de explosión
         setLocalPowerUps(prev => {
           const newPowerUps = [...prev];
           
@@ -188,7 +187,6 @@ const GamePage: React.FC = () => {
     animationRef.current = requestAnimationFrame(gameLoop);
   }, [defaultMap, gameState]);
 
-  // Iniciar/detener el game loop
   useEffect(() => {
     animationRef.current = requestAnimationFrame(gameLoop);
     return () => {
@@ -198,7 +196,6 @@ const GamePage: React.FC = () => {
     };
   }, [gameLoop]);
 
-  // Inicialización del juego
   useEffect(() => {
     console.log('Inicializando juego...');
     console.log('Datos de location.state:', location.state);
@@ -224,29 +221,25 @@ const GamePage: React.FC = () => {
     setLoading(false);
   }, [location.state, defaultMap, defaultConfig]);
 
-  // Colocar bomba localmente (sin enviar al backend)
   const placeBomb = useCallback((playerId: string, x: number, y: number) => {
     const currentPlayer = gameState?.players.find(p => p.id === playerId);
     if (!currentPlayer) return;
 
-    // Verificar si el jugador puede colocar más bombas
     const activeBombs = bombs.filter(b => b.playerId === playerId);
     if (activeBombs.length >= currentPlayer.maxBombs) return;
 
-    // Colocar nueva bomba localmente
     const newBomb: Bomb = {
       id: `bomb-${Date.now()}`,
       x,
       y,
       range: currentPlayer.bombRange,
-      timer: 120, // 2 segundos a 60fps
+      timer: 120,
       playerId
     };
 
     setBombs(prev => [...prev, newBomb]);
   }, [bombs, gameState?.players]);
 
-  // Recoger power-up localmente (sin enviar al backend)
   const collectPowerUp = useCallback((playerId: string, x: number, y: number) => {
     const powerUpIndex = localPowerUps.findIndex(pu => pu.x === x && pu.y === y);
     if (powerUpIndex === -1) return;
@@ -260,14 +253,13 @@ const GamePage: React.FC = () => {
         players: prev.players.map(p => {
           if (p.id !== playerId) return p;
           
-          // Aplicar efecto del power-up localmente
           switch (powerUp.type) {
             case 'BOMB':
               return { ...p, maxBombs: p.maxBombs + 1 };
             case 'FIRE':
               return { ...p, bombRange: p.bombRange + 1 };
             case 'SPEED':
-              return p; // Implementar lógica de velocidad si es necesario
+              return p;
             default:
               return p;
           }
@@ -275,11 +267,9 @@ const GamePage: React.FC = () => {
       };
     });
 
-    // Eliminar power-up recolectado
     setLocalPowerUps(prev => prev.filter((_, i) => i !== powerUpIndex));
   }, [localPowerUps]);
 
-  // Manejador de movimiento (envía al backend)
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (loading || !currentPlayerId || !gameState?.map) return;
 
@@ -314,7 +304,6 @@ const GamePage: React.FC = () => {
       case 'RIGHT': newX += 1; break;
     }
 
-    // Validar movimiento
     if (newX < 0 || newY < 0 || newX >= gameState.map.width || newY >= gameState.map.height) {
       return;
     }
@@ -324,13 +313,11 @@ const GamePage: React.FC = () => {
       return;
     }
 
-    // Verificar si hay una bomba en la celda destino (localmente)
     const bombInTarget = bombs.some(b => b.x === newX && b.y === newY);
     if (bombInTarget) {
       return;
     }
 
-    // Verificar si hay un jugador en la celda destino (del estado del backend)
     const playerInTarget = gameState.players.some(p => 
       p.id !== currentPlayerId && p.x === newX && p.y === newY
     );
@@ -338,13 +325,11 @@ const GamePage: React.FC = () => {
       return;
     }
 
-    // Verificar si hay un power-up en la celda destino (localmente)
     const powerUpInTarget = localPowerUps.some(pu => pu.x === newX && pu.y === newY);
     if (powerUpInTarget) {
       collectPowerUp(currentPlayerId, newX, newY);
     }
 
-    // Enviar movimiento al backend
     sendMessage<PlayerMoveRequest>(`/app/game/${roomCode}/move`, {
       playerId: currentPlayerId,
       newX,
@@ -353,7 +338,6 @@ const GamePage: React.FC = () => {
     });
   }, [currentPlayerId, gameState, loading, placeBomb, collectPowerUp, bombs, localPowerUps, roomCode, sendMessage]);
 
-  // Configurar listeners de teclado
   useEffect(() => {
     if (loading) return;
     const container = gameContainerRef.current;
@@ -367,7 +351,6 @@ const GamePage: React.FC = () => {
     };
   }, [handleKeyDown, loading]);
 
-  // Suscripción a actualizaciones del juego (solo para movimientos)
   useEffect(() => {
     if (!isConnected || !roomCode || loading) return;
 
@@ -460,15 +443,21 @@ const GamePage: React.FC = () => {
               const cellType = cell?.isWall 
                 ? cell?.isDestructible ? 'destructible' : 'wall' 
                 : 'empty';
+              
               const player = gameState.players.find(p => p.x === x && p.y === y);
               const bomb = bombs.find(b => b.x === x && b.y === y);
               const explosion = explosions.find(e => e.x === x && e.y === y);
               const powerUp = localPowerUps.find(pu => pu.x === x && pu.y === y);
               
               return (
-                <div key={`cell-${x}-${y}`} className={`game-cell ${cellType} ${
-                  explosion ? 'explosion' : ''
-                }`}>
+                <div 
+                  key={`cell-${x}-${y}`} 
+                  className={`game-cell ${cellType} ${
+                    explosion ? 'explosion' : ''
+                  } ${
+                    explosion?.isCenter ? 'explosion-center' : explosion ? 'explosion-arm' : ''
+                  }`}
+                >
                   {player && (
                     <div className={`game-player player-${player.name} ${
                       player.id === currentPlayerId ? 'current-player' : ''
@@ -483,10 +472,12 @@ const GamePage: React.FC = () => {
                       )}
                     </div>
                   )}
-                  {bomb && !player && (
+                  
+                  {bomb && !player && !explosion && (
                     <div className="game-bomb" />
                   )}
-                  {powerUp && !player && !bomb && (
+                  
+                  {powerUp && !player && !bomb && !explosion && (
                     <div className={`game-power-up ${powerUp.type.toLowerCase()}`}>
                       {powerUp.type === 'BOMB' && 'B+'}
                       {powerUp.type === 'FIRE' && 'F+'}
