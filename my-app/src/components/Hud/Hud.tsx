@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import './HUD.css';
+import "./Hud.css";
 
 interface HUDProps {
   initialTime: number; 
