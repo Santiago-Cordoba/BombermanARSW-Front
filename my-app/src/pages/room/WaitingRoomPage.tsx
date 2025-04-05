@@ -89,14 +89,15 @@ const WaitingRoomPage: React.FC = () => {
                             
                         case 'GAME_START': {
                             setGameStarting(true);
-                            // Navegación inmediata con todos los datos del juego
+                            const currentPlayer = message.players.find(p => p.name === playerName);
                             navigate(`/game/${roomCode}`, { 
                                 state: { 
-                                    initialGameData: {
-                                        config: message.config || {},
-                                        players: message.players,
-                                        map: message.map
-                                    }
+                                initialGameData: {
+                                    config: message.config || {},
+                                    players: message.players,
+                                    map: message.map
+                                },
+                                playerId: currentPlayer?.id // Add this line
                                 } 
                             });
                             break;

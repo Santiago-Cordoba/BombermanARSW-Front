@@ -1,13 +1,43 @@
 .game-container {
   padding: 20px;
   background-color: #222;
-  min-height: 20vh;
+  min-height: 100vh;
   color: white;
+  outline: none;
+  font-family: 'Arial', sans-serif;
+}
+
+.game-container:focus {
+  outline: none;
 }
 
 .game-loading {
   text-align: center;
   margin-top: 50px;
+  padding: 20px;
+}
+
+.debug-info {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #333;
+  border-radius: 8px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+.debug-info ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.debug-info li {
+  margin: 5px 0;
+  padding: 5px;
+  background-color: #444;
+  border-radius: 4px;
 }
 
 .game-header {
@@ -15,11 +45,29 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 8px;
 }
 
 .game-info {
   display: flex;
-  gap: 20px;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.game-info span {
+  background-color: #444;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.game-map {
+  margin: 0 auto;
+  user-select: none;
 }
 
 .game-cell {
@@ -29,10 +77,13 @@
   justify-content: center;
   align-items: center;
   border-radius: 4px;
+  position: relative;
+  transition: background-color 0.2s;
 }
 
 .game-cell.empty {
   background-color: #7cb342;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
 }
 
 .game-cell.wall {
@@ -48,7 +99,14 @@
   height: 24px;
   border-radius: 50%;
   border: 2px solid white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+  position: relative;
   animation: pulse 1.5s infinite alternate;
+}
+
+.game-player.current-player {
+  animation: pulse 0.8s infinite alternate;
+  border-color: gold;
 }
 
 .player-1 {
@@ -59,14 +117,46 @@
   background-color: #4fc3f7;
 }
 
+.player-indicator {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 50%;
+  border: 1px solid black;
+}
+
 .game-power-up {
   width: 12px;
   height: 12px;
   background-color: gold;
   border-radius: 50%;
+  box-shadow: 0 0 5px gold;
   animation: spin 2s infinite linear;
 }
 
+.game-controls {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #aaa;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 8px;
+}
+
+.player-id {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  word-break: break-all;
+  background-color: #444;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+/* Animaciones */
 @keyframes pulse {
   from { transform: scale(1); }
   to { transform: scale(1.1); }
@@ -75,4 +165,15 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Efectos de movimiento */
+.game-player.moving {
+  animation: move-bounce 0.3s ease;
+}
+
+@keyframes move-bounce {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(0, -3px); }
+  100% { transform: translate(0, 0); }
 }
