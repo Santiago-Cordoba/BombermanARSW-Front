@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 interface Position {
   row: number;
@@ -8,14 +8,14 @@ interface Position {
 interface PlayerControllerProps {
   initialPosition: Position;
   boardSize: number;
-  onPositionChange: (newPosition: Position) => void;
+  onPositionChange: (direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => void;
   onPlaceBomb: () => void;
   walls: Position[];
   bombs: Position[];
-  children?: ReactNode;
+  children: React.ReactNode;
 }
 
-export function PlayerController({
+const PlayerController: React.FC<PlayerControllerProps> = ({
   initialPosition,
   boardSize,
   onPositionChange,
@@ -23,47 +23,88 @@ export function PlayerController({
   walls,
   bombs,
   children
-}: PlayerControllerProps) {
-  const [position, setPosition] = useState(initialPosition);
-
-  const movePlayer = (newRow: number, newCol: number) => {
-    if (newRow < 0 || newRow >= boardSize || newCol < 0 || newCol >= boardSize) {
-      return;
-    }
-    
-    const isWall = walls.some(wall => wall.row === newRow && wall.col === newCol);
-    if (isWall) {
-      return;
-    }
-
-    const isBomb = bombs.some(bomb => bomb.row === newRow && bomb.col === newCol);
-    if (isBomb) {
-      return;
-    }
-
-    const newPosition = { row: newRow, col: newCol };
-    setPosition(newPosition);
-    onPositionChange(newPosition);
-  };
-
+}) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      const { row, col } = position;
+      let direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | null = null;
+      
+      switch(e.key) {
+        case 'ArrowUp':
+          direction = 'UP';
+          break;
+        case 'ArrowDown':
+          direction = 'DOWN';
+          break;
+        case 'ArrowLeft':
+          direction = 'LEFT';
+          break;
+        case 'ArrowRight':
+          direction = 'RIGHT';
+          break;
+        case ' ':
+          onPlaceBomb();
+          return;
+        default:
+          return;
+      }
 
-      switch(key) {
-        case 'w': movePlayer(row - 1, col); break;
-        case 's': movePlayer(row + 1, col); break;
-        case 'a': movePlayer(row, col - 1); break;
-        case 'd': movePlayer(row, col + 1); break;
-        case 'f': onPlaceBomb(); break; 
-        default: break;
+      if (direction) {
+        const newPosition = calculateNewPosition(initialPosition, direction);
+        
+        if (isValidPosition(newPosition, boardSize, walls, bombs)) {
+          onPositionChange(direction);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [position, onPlaceBomb, bombs]);
+  }, [initialPosition, boardSize, onPositionChange, onPlaceBomb, walls, bombs]);
 
   return <>{children}</>;
-}
+};
+
+// Función auxiliar para calcular nueva posición
+const calculateNewPosition = (
+  current: Position, 
+  direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
+): Position => {
+  switch(direction) {
+    case 'UP':
+      return { row: current.row - 1, col: current.col };
+    case 'DOWN':
+      return { row: current.row + 1, col: current.col };
+    case 'LEFT':
+      return { row: current.row, col: current.col - 1 };
+    case 'RIGHT':
+      return { row: current.row, col: current.col + 1 };
+  }
+};
+
+// Función auxiliar para validar posición
+const isValidPosition = (
+  position: Position,
+  boardSize: number,
+  walls: Position[],
+  bombs: Position[]
+): boolean => {
+  // Verificar límites del tablero
+  if (position.row < 0 || position.row >= boardSize || 
+      position.col < 0 || position.col >= boardSize) {
+    return false;
+  }
+
+  // Verificar colisión con paredes
+  if (walls.some(w => w.row === position.row && w.col === position.col)) {
+    return false;
+  }
+
+  // Verificar colisión con bombas
+  if (bombs.some(b => b.row === position.row && b.col === position.col)) {
+    return false;
+  }
+
+  return true;
+};
+
+export default PlayerController;

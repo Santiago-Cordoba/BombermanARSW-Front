@@ -1,27 +1,58 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 interface HUDProps {
+  initialTime: number; 
+  roomCode: string;
   lives: number;
-  timeLeft: string;
-  playersLeft: number;
-  score?: number;
-  isHit?: boolean; 
+  isRunning?: boolean; 
+  onTimeEnd?: () => void; 
 }
 
-const HUD: React.FC<HUDProps> = ({ lives, timeLeft, playersLeft, isHit }) => {
+const HUD: React.FC<HUDProps> = ({ 
+  initialTime, 
+  roomCode,
+  lives,
+  isRunning = true,
+  onTimeEnd
+}) => {
+  const [timeLeft, setTimeLeft] = useState(initialTime);
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  useEffect(() => {
+    setTimeLeft(initialTime);
+  }, [initialTime]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onTimeEnd?.();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isRunning, onTimeEnd]);
+
   return (
-    <div className={`hud-container ${isHit ? 'hud-hit' : ''}`}>
+    <div className="hud-container">
       <div className="hud-section">
-        <span className="hud-icon">❤️</span>
-        <span className="hud-value">{lives}</span>
+        <div className="hud-room-code">Sala: {roomCode}</div>
+        <div className="hud-time">Tiempo: {formatTime(timeLeft)}</div>
       </div>
+      
       <div className="hud-section">
-        <span className="hud-icon">⏱️</span>
-        <span className="hud-value">{timeLeft}</span>
-      </div>
-      <div className="hud-section">
-        <span className="hud-icon">👥</span>
-        <span className="hud-value">{playersLeft}</span>
+        <div className="hud-lives">Vidas: {lives}</div>
       </div>
     </div>
   );

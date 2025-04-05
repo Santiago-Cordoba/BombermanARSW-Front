@@ -1,287 +1,144 @@
-import React, { useState, useEffect, useRef } from "react";
-import HUD from "../Hud/Hud";
-import { PlayerController } from "../playerMove/PlayerMovement";
-import { SoundPlayer } from "../SoundBomb";
-import { WallManager } from "../wall";
-import { BombManager } from "../bomb/bomb";
-import playerImage from '../../images/Player.png';
-import boomSound from '../../assets/sounds/boom2.mp3';
-import "./Board.css";
-import "../Hud/Hud.css";
-import { PowerUpManager } from "../powerupLife";
+import React, { useEffect, useState } from 'react';
+import { useWebSocket } from '../Socket/WebSocketProvider'; // Asegúrate de que la ruta sea correcta
+import './Board.css';
 
-interface Position {
-  row: number;
-  col: number;
+// Tipos TypeScript mejorados
+type GameConfig = {
+  duration: number;
+  lives: number;
+};
+
+type Player = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+};
+
+type GameCell = {
+  isDestructible: boolean;
+  hasPowerUp: boolean;
+  x: number;
+  y: number;
+  isWall: boolean;
+};
+
+type GameMap = {
+  width: number;
+  height: number;
+  cells: GameCell[][];
+};
+
+type GameMessageType = 'GAME_START' | 'GAME_UPDATE' | 'GAME_OVER';
+
+type GameMessage = {
+  type: GameMessageType;
+  config: GameConfig;
+  players: Player[];
+  map: GameMap;
+};
+
+interface BombermanGameProps {
+  roomCode: string;
 }
 
-interface BoardProps {
-  config?: {
-    duration?: number;
-    players?: number;
-    blocks?: number;
-    lives?: number;
-  };
-}
-
-type CellType = '0' | '1' | 'P' | 'X';
-
-const Board: React.FC<BoardProps> = ({ config = {} }) => {
-  const size = 13;
-  const center = Math.floor(size / 2);
-  const initialTimeInSeconds = (config.duration || 2) * 60;
-  const [shouldPlayBoomSound, setShouldPlayBoomSound] = useState(false);
-  const damageCooldownRef = useRef(false);
-  const explosionIdRef = useRef(0);
-
-  const maxLives = config.lives !== undefined ? config.lives : 3;
-
-  const [gameState, setGameState] = useState({
-    lives: maxLives,
-    timeLeftInSeconds: initialTimeInSeconds,
-    playersLeft: config.players || 1,
-    score: 0
-  });
-
-  const [playerPosition, setPlayerPosition] = useState({
-    row: center,
-    col: center
-  });
-
-  const [gameOver, setGameOver] = useState({
-    isOver: false,
-    message: ''
-  });
-
-  const [explosions, setExplosions] = useState<Position[]>([]);
+const BombermanGame: React.FC<BombermanGameProps> = ({ roomCode }) => {
+  const [gameState, setGameState] = useState<GameMessage | null>(null);
+  const { subscribe, isConnected } = useWebSocket();
 
   useEffect(() => {
-    if (gameState.lives <= 0 && !gameOver.isOver) {
-      setGameOver({
-        isOver: true,
-        message: '¡HAS PERDIDO!'
-      });
-    }
-  }, [gameState.lives]);
-  
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setGameState(prev => {
-        const newTime = prev.timeLeftInSeconds - 1;
-        
-        if (newTime <= 0) {
-          clearInterval(timer);
-          
-          if (prev.playersLeft > 1) {
-            setGameOver({
-              isOver: true,
-              message: '¡La partida ha quedado en empate!'
-            });
-          } else if (prev.playersLeft === 1) {
-            setGameOver({
-              isOver: true,
-              message: '¡Has ganado la partida!'
-            });
-          } else {
-            setGameOver({
-              isOver: true,
-              message: '¡Juego terminado!'
-            });
-          }
-          
-          return { ...prev, timeLeftInSeconds: 0 };
-        }
-        
-        return { ...prev, timeLeftInSeconds: newTime };
-      });
-    }, 1000);
+    if (!isConnected) return;
 
-    return () => clearInterval(timer);
-  }, []);
-
-  const handlePowerUpCollect = () => {
-    setGameState(prev => {
-      if (prev.lives < maxLives) {
-        return {
-          ...prev,
-          lives: prev.lives + 1
-        };
+    const handleGameMessage = (message: GameMessage) => {
+      if (message.type === 'GAME_START' || message.type === 'GAME_UPDATE') {
+        setGameState(message);
       }
-      return prev; 
-    });
-  };
-
-  const handleBombPlaced = () => {
-    setShouldPlayBoomSound(true);
-    setTimeout(() => setShouldPlayBoomSound(false), 100);
-  };
-
-  const handleBombExplode = (position: Position) => {
-    const explosionPositions = [
-      position,
-      { row: position.row - 1, col: position.col },  
-      { row: position.row + 1, col: position.col }, 
-      { row: position.row, col: position.col - 1 },  
-      { row: position.row, col: position.col + 1 }
-    ];
-    
-    explosionIdRef.current += 1;
-    const currentExplosionId = explosionIdRef.current;
-    
-    setExplosions(explosionPositions);
-    
-    if (!damageCooldownRef.current) {
-      const isPlayerInExplosion = explosionPositions.some(
-        exp => exp.row === playerPosition.row && exp.col === playerPosition.col
-      );
-      
-      if (isPlayerInExplosion) {
-        damageCooldownRef.current = true;
-        setGameState(prev => ({
-          ...prev,
-          lives: Math.max(0, prev.lives - 1)
-        }));
-        
-        setTimeout(() => {
-          damageCooldownRef.current = false;
-        }, 1000);
-      }
-    }
-    
-    setTimeout(() => {
-      if (explosionIdRef.current === currentExplosionId) {
-        setExplosions([]);
-      }
-    }, 500);
-  };
-
-  const generateBoard = (): CellType[][] => {
-    return Array(size).fill(0).map((_, row) => {
-      return Array(size).fill(0).map((_, col): CellType => {
-        if (row === 0 || row === size-1 || col === 0 || col === size-1) return '1';
-        if (row === playerPosition.row && col === playerPosition.col) return 'P';
-        if (explosions.some(exp => exp.row === row && exp.col === col)) return 'X';
-        return '0';
-      });
-    });
-  };
-
-  const renderCell = (cell: CellType, rowIndex: number, colIndex: number) => {
-    const cellTypes = {
-      '0': 'empty-cell',
-      '1': 'solid-block',
-      'P': 'player',
-      'X': 'explosion'
     };
 
-    return (
-      <div 
-        className={`game-cell ${cellTypes[cell]}`}
-        key={`${rowIndex}-${colIndex}`}
-        style={cell === 'P' ? { 
-          backgroundImage: `url(${playerImage})`,
-          backgroundSize: 'contain',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          backgroundColor: 'transparent'
-        } : {}}
-      />
+    const subscription = subscribe<GameMessage>(
+      `/topic/game/${roomCode}`, 
+      handleGameMessage
     );
+
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
+  }, [subscribe, isConnected, roomCode]);
+
+  if (!gameState) {
+    return <div className="loading-message">Cargando juego...</div>;
+  }
+
+  return (
+    <div className="game-container">
+      <GameInfo config={gameState.config} playerCount={gameState.players.length} />
+      <GameMapDisplay map={gameState.map} players={gameState.players} />
+    </div>
+  );
+};
+
+// Componente de información del juego
+const GameInfo: React.FC<{ config: GameConfig; playerCount: number }> = ({ config, playerCount }) => {
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="game-board-container">
-      <SoundPlayer 
-        soundFile={boomSound}
-        playCondition={shouldPlayBoomSound}
-        volume={0.4}
-      />
-      
-      <HUD 
-        lives={gameState.lives}
-        timeLeft={formatTime(gameState.timeLeftInSeconds)}
-        playersLeft={gameState.playersLeft}
-        score={gameState.score}
-      />
-      
-      <WallManager 
-        size={size} 
-        center={{ row: center, col: center }} 
-        blocks={config.blocks || 0} 
-      >
-        {(renderWall, walls) => (
-          <BombManager 
-            onBombPlaced={handleBombPlaced}
-            onBombExplode={handleBombExplode}
-          >
-            {(bombs, placeBomb, renderBomb) => (
-              <PowerUpManager
-                boardSize={size}
-                playerPosition={playerPosition}
-                maxLives={maxLives}
-                currentLives={gameState.lives}
-                onCollect={handlePowerUpCollect}
-              >
-                {(renderPowerUp) => (
-                  <PlayerController
-                    initialPosition={{ row: center, col: center }}
-                    boardSize={size}
-                    onPositionChange={setPlayerPosition}
-                    onPlaceBomb={() => placeBomb(playerPosition)}
-                    walls={walls}
-                    bombs={bombs}
-                  >
-                    <div className="game-board">
-                      {generateBoard().map((row, rowIndex) => (
-                        <div className="board-row" key={rowIndex}>
-                          {row.map((cell, colIndex) => {
-                            const wallElement = renderWall(rowIndex, colIndex);
-                            const bombElement = renderBomb(rowIndex, colIndex);
-                            const powerUpElement = renderPowerUp(rowIndex, colIndex);
-                            return wallElement || bombElement || powerUpElement || renderCell(cell, rowIndex, colIndex);
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </PlayerController>
-                )}
-              </PowerUpManager>
-            )}
-          </BombManager>
-        )}
-      </WallManager>
-
-      {gameOver.isOver && (
-      <div className="retro-game-over-card">
-        <div className="retro-game-over-content">
-        <h2 className={`retro-game-over-title ${gameState.lives <= 0 ? 'game-lost' : ''}`}>
-        {gameState.lives <= 0 ? '¡HAS PERDIDO!' : gameOver.message}
-        </h2>
-          <div className="retro-game-over-buttons">
-            <button 
-              className="retro-game-over-button"
-              onClick={() => window.location.reload()}
-            >
-              Jugar de nuevo
-            </button>
-            <button 
-              className="retro-game-over-button secondary"
-              onClick={() => {/* Lógica para menú principal */}}
-            >
-              Menú
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-);
+    <div className="info-container">
+      <div className="info-item">Tiempo: {formatTime(config.duration)}</div>
+      <div className="info-item">Vidas: {config.lives}</div>
+      <div className="info-item">Jugadores: {playerCount}</div>
+    </div>
+  );
 };
 
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-}
+// Componente del mapa del juego
+const GameMapDisplay: React.FC<{ map: GameMap; players: Player[] }> = ({ map, players }) => {
+  return (
+    <div 
+      className="map-container"
+      style={{
+        gridTemplateColumns: `repeat(${map.width}, 32px)`,
+        gridTemplateRows: `repeat(${map.height}, 32px)`
+      }}
+    >
+      {map.cells.map((row, y) => (
+        <React.Fragment key={`row-${y}`}>
+          {row.map((cell, x) => (
+            <CellComponent 
+              key={`cell-${x}-${y}`} 
+              cell={cell} 
+              player={players.find(p => p.x === x && p.y === y)}
+            />
+          ))}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
 
-export default Board;
+// Componente de celda individual
+type CellType = 'empty' | 'wall' | 'destructible';
+
+const CellComponent: React.FC<{ cell: GameCell; player?: Player }> = ({ cell, player }) => {
+  const getCellType = (): CellType => {
+    if (cell.isWall) {
+      return cell.isDestructible ? 'destructible' : 'wall';
+    }
+    return 'empty';
+  };
+
+  const cellType = getCellType();
+  const playerColor = player?.name === '1' ? 'player-1' : 'player-2';
+
+  return (
+    <div className={`cell ${cellType}`}>
+      {player && <div className={`player-indicator ${playerColor}`} />}
+      {cell.hasPowerUp && !player && <div className="power-up-indicator" />}
+    </div>
+  );
+};
+
+export default BombermanGame;
