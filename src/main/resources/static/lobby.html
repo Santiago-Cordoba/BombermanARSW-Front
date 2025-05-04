@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomberman Lobby</title>
+    <link rel="stylesheet" href="/styles.css">
+    <!-- Incluye estas líneas en tu HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('/images/Begin.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lobby-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .players-list {
+            margin: 20px 0;
+        }
+
+        #startBattleBtn {
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        #startBattleBtn:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .spinner {
+            display: none;
+            margin: 20px auto;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #4CAF50;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<div class="lobby-container">
+    <h1 id="game-title">Game Lobby</h1>
+    <div class="game-info">
+        <div>
+            <p><strong>Scenario:</strong> <span id="scenario-display"></span></p>
+            <p><strong>Players:</strong> <span id="player-count"></span></p>
+            <p><strong>Duration:</strong> <span id="duration"></span> minutes</p>
+        </div>
+        <div>
+            <p><strong>Blocks:</strong> <span id="block-count"></span></p>
+            <p><strong>Lives per player:</strong> <span id="lives-count"></span></p>
+            <p><strong>Status:</strong> <span id="game-status">Waiting for players...</span></p>
+        </div>
+    </div>
+    <div class="players-list">
+        <h3>Current Players:</h3>
+        <ul id="players-list" style="list-style: none; padding: 0;"></ul>
+    </div>
+    <button id="startBattleBtn" style="display: none;">¡Que comience la batalla!</button>
+    <div class="spinner" id="loadingSpinner"></div>
+</div>
+<script src="/lobby.js" defer></script>
+</body>
+</html>

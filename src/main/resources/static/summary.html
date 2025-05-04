@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Summary</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      background-color: #111;
+      color: white;
+      font-family: 'Arial', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #summary-container {
+      background: #222;
+      padding: 30px;
+      border-radius: 12px;
+      max-width: 700px;
+      margin: auto;
+      box-shadow: 0 0 20px rgba(0, 255, 100, 0.3);
+    }
+
+    h1 {
+      color: #4CAF50;
+      font-size: 32px;
+    }
+
+    ul {
+      text-align: left;
+      list-style: none;
+      padding: 0;
+      margin-top: 20px;
+    }
+
+    li {
+      margin: 10px 0;
+      font-size: 18px;
+      padding: 10px;
+      background-color: #333;
+      border-radius: 8px;
+    }
+
+    .winner {
+      font-size: 22px;
+      font-weight: bold;
+      color: gold;
+    }
+
+    .play-again-btn {
+      margin-top: 30px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .play-again-btn:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+<div id="summary-container">
+  <h1>🏆 Game Summary</h1>
+  <p class="winner" id="winner"></p>
+  <ul id="stats"></ul>
+
+  <button class="play-again-btn" onclick="window.location.href='/game.html'">
+    🔁 Play Again
+  </button>
+</div>
+
+<script>
+  const summary = JSON.parse(sessionStorage.getItem("gameSummary"));
+  const container = document.getElementById("summary-container");
+  const winner = document.getElementById("winner");
+  const statsList = document.getElementById("stats");
+
+  if (!summary || !summary.stats) {
+    container.innerHTML = "<h2>⚠️ No game summary found.</h2>";
+  } else {
+    winner.textContent = summary.winnerText;
+
+    for (const [player, stats] of Object.entries(summary.stats)) {
+      const li = document.createElement("li");
+      li.innerHTML = `
+        👤 <strong>${player}</strong><br>
+        ❤️ Lives: ${stats.lives} &nbsp;&nbsp;
+        💣 Bombs: ${stats.bombsPlaced} &nbsp;&nbsp;
+        🧱 Blocks: ${stats.blocksDestroyed} &nbsp;&nbsp;
+        ⚡ PowerUps: ${stats.powerUpsCollected}
+      `;
+      statsList.appendChild(li);
+    }
+  }
+</script>
+
+</body>
+</html>

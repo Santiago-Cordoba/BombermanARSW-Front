@@ -1,35 +1,25 @@
-    <!DOCTYPE html>
-    <html lang="es">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Configuración de Partida</title>
-        <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@5.5.1/bundles/stomp.umd.min.js"></script>
-        <link rel="stylesheet" href="styles.css">
-    </head>
-    <body>
-    <div class="config-container">
-        <h1>Configuración de la Partida</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomberman - Bienvenida</title>
+    <link rel="stylesheet" href="/styles.css">
 
-        <label for="duration">Duración:</label>
-        <select id="duration">
-            <option value="2">2 Min</option>
-            <option value="5">5 Min</option>
-            <option value="10">10 Min</option>
-        </select>
-
-        <label for="players">Número de Jugadores (1-4):</label>
-        <input type="number" id="players" min="1" max="4">
-
-        <label for="blocks">Número de Bloques (1-30):</label>
-        <input type="number" id="blocks" min="1" max="30">
-
-        <label for="lives">Número de Vidas (1-10):</label>
-        <input type="number" id="lives" min="1" max="10">
-
-        <button onclick="sendConfig()">Iniciar Partida</button>
+</head>
+<body>
+<div class="welcome-container">
+    <div class="auth-box">
+        <h1>Bomberman</h1>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Nombre de usuario" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="button" id="loginBtn" class="login-btn">Iniciar Sesión</button>
+            <button type="submit" id="registerBtn">Registrarse</button>
+        </form>
+        <p id="message"></p>
     </div>
-
-    <script src="app.js"></script>
-    </body>
-    </html>
+</div>
+<script src="/auth.js"></script>
+</body>
+</html>

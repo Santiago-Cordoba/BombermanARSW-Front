@@ -1,19 +1,459 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego - Bomberman</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bomberman Game</title>
+    <link rel="stylesheet" href="/styles.css">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --error-color: #ff4444;
+            --background-dark: #222;
+            --background-medium: #333;
+            --background-light: rgba(255, 255, 255, 0.1);
+            --text-color: white;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-dark);
+            color: var(--text-color);
+            font-family: 'Arial', sans-serif;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        #game-container {
+            width: 800px;
+            height: 600px;
+            margin: 20px auto;
+            background-color: var(--background-medium);
+            position: relative;
+            display: none;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #welcome-message {
+            text-align: center;
+            padding: 20px;
+        }
+
+        #config-panel {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .config-group {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        label {
+            display: inline-block;
+            width: 250px;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 120px;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background-color: #444;
+            color: var(--text-color);
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #error-message, #join-error-message {
+            color: var(--error-color);
+            margin-top: 15px;
+            min-height: 20px;
+            font-weight: bold;
+        }
+
+        #config-summary {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: var(--background-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* Scenario Dropdown Styles */
+        .scenario-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 300px;
+            z-index: 10;
+        }
+
+        .scenario-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #444;
+            border: 2px solid #555;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .scenario-dropdown-toggle:hover {
+            background-color: #555;
+        }
+
+        .scenario-dropdown-toggle img {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .scenario-dropdown-toggle .selected-scenario-name {
+            font-weight: bold;
+            flex-grow: 1;
+        }
+
+        .scenario-dropdown-toggle .dropdown-arrow {
+            margin-left: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .scenario-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .scenario-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #444;
+            border: 2px solid #555;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+        }
+
+        .scenario-dropdown.active .scenario-dropdown-menu {
+            display: block;
+        }
+
+        .scenario-option {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #555;
+        }
+
+        .scenario-option:last-child {
+            border-bottom: none;
+        }
+
+        .scenario-option:hover {
+            background-color: #555;
+        }
+
+        .scenario-option img {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .scenario-option .scenario-name {
+            font-weight: bold;
+        }
+
+        .join-game {
+            margin-top: 25px;
+            padding: 25px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .option-tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--background-medium);
+        }
+
+        .option-tab {
+            padding: 14px 28px;
+            background-color: var(--background-medium);
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            margin-right: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .option-tab:hover {
+            background-color: #444;
+        }
+
+        .option-tab.active {
+            background-color: var(--primary-color);
+        }
+
+        .option-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .option-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #game-code-display {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px dashed var(--primary-color);
+        }
+
+        #game-code {
+            font-family: 'Courier New', monospace;
+            font-size: 26px;
+            letter-spacing: 3px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            margin: 20px auto;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 900px) {
+            #config-panel, #game-container {
+                width: 95%;
+                max-width: 100%;
+            }
+
+            .scenario-dropdown {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .config-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            label {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .scenario-dropdown {
+                width: 100%;
+            }
+
+            .option-tabs {
+                flex-direction: column;
+            }
+
+            .option-tab {
+                border-radius: 0;
+                margin-right: 0;
+                margin-bottom: 2px;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="game-container">
-  <h1>Bomberman</h1>
-  <p id="timer">Tiempo: -- min</p>
-  <p id="playerLives">Vidas: --</p>
-  <canvas id="gameCanvas"></canvas>
+<div id="welcome-message">
+    <h1>Welcome to Bomberman!</h1>
+    <p id="user-greeting"></p>
 </div>
 
-<script src="game.js"></script>
+<div id="config-panel">
+    <div class="option-tabs">
+        <div class="option-tab active" id="create-tab">Create Game</div>
+        <div class="option-tab" id="join-tab">Join Game</div>
+    </div>
+
+    <div class="option-content active" id="create-content">
+        <h2>Create New Game</h2>
+
+        <div class="config-group">
+            <label>Select Scenario:</label>
+            <div class="scenario-dropdown" id="scenarioDropdown">
+                <div class="scenario-dropdown-toggle" id="scenarioToggle">
+                    <img src="/images/scenarios/Forest.png" alt="Forest" id="selectedScenarioImage">
+                    <span class="selected-scenario-name" id="selectedScenarioName">Forest</span>
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                <div class="scenario-dropdown-menu" id="scenarioMenu">
+                    <div class="scenario-option" data-scenario="Forest">
+                        <img src="/images/scenarios/Forest.png" alt="Forest">
+                        <span class="scenario-name">Forest</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="desert">
+                        <img src="/images/scenarios/desert.png" alt="Desert">
+                        <span class="scenario-name">Desert</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="Castle">
+                        <img src="/images/scenarios/Castle.png" alt="Castle">
+                        <span class="scenario-name">Castle</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="ciber">
+                        <img src="/images/scenarios/ciber.png" alt="Cyber">
+                        <span class="scenario-name">Cyber</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="Float">
+                        <img src="/images/scenarios/Float.png" alt="Float">
+                        <span class="scenario-name">Float</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="Volcan">
+                        <img src="/images/scenarios/Volcan.png" alt="Volcano">
+                        <span class="scenario-name">Volcano</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="nieve">
+                        <img src="/images/scenarios/nieve.png" alt="Snow">
+                        <span class="scenario-name">Snow</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="VR">
+                        <img src="/images/scenarios/VR.png" alt="VR">
+                        <span class="scenario-name">VR</span>
+                    </div>
+                    <div class="scenario-option" data-scenario="RIP">
+                        <img src="/images/scenarios/RIP.png" alt="Graveyard">
+                        <span class="scenario-name">Graveyard</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="config-group">
+            <label for="gameDuration">Game Duration (minutes):</label>
+            <select id="gameDuration">
+                <option value="2">2 minutes</option>
+                <option value="5" selected>5 minutes</option>
+                <option value="10">10 minutes</option>
+            </select>
+        </div>
+
+        <div class="config-group">
+            <label for="playerCount">Number of Players (1-4):</label>
+            <input type="number" id="playerCount" min="1" max="4" value="2">
+        </div>
+
+        <div class="config-group">
+            <label for="blockCount">Number of Blocks (1-30):</label>
+            <input type="number" id="blockCount" min="1" max="30" value="15">
+        </div>
+
+        <div class="config-group">
+            <label for="powerUps">Number of Power-Ups (0-30):</label>
+            <input type="number" id="powerUps" min="0" max="30" value="10">
+        </div>
+
+        <div class="config-group">
+            <label for="livesCount">Lives per Player (1-10):</label>
+            <input type="number" id="livesCount" min="1" max="10" value="3">
+        </div>
+
+        <button id="createGameBtn">Create Game</button>
+        <div class="spinner" id="createSpinner"></div>
+        <div id="error-message"></div>
+
+
+        <div id="config-summary">
+            <h3>Current Configuration:</h3>
+            <p id="config-details"></p>
+            <div id="game-code-display" style="display: none;">
+                <strong>Game Code:</strong> <span id="game-code"></span>
+                <p>Share this code with other players</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="option-content" id="join-content">
+        <h2>Join Existing Game</h2>
+        <div class="join-game">
+            <div class="config-group">
+                <label for="gameCodeInput">Enter Game Code (5 digits):</label>
+                <input type="text" id="gameCodeInput" maxlength="5" pattern="\d{5}"
+                       placeholder="12345" style="width: 150px; font-size: 18px; text-align: center;">
+            </div>
+            <button id="joinGameBtn">Join Game</button>
+            <div class="spinner" id="joinSpinner"></div>
+            <div id="join-error-message"></div>
+        </div>
+    </div>
+</div>
+
+<div id="game-container">
+    <!-- Game will be rendered here -->
+</div>
+<script src="/game.js"></script>
+<canvas id="gameCanvas" width="640" height="480"></canvas>
+
 </body>
 </html>

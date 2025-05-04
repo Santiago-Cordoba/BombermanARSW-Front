@@ -1,237 +1,193 @@
-// Obtener parámetros de la URL
-const params = new URLSearchParams(window.location.search);
-const duration = params.get("duration") || "5";
-const players = params.get("players") || "2";
-const blocks = params.get("blocks") || "10";
-const lives = params.get("lives") || "3";
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get('user');
+    document.getElementById('user-greeting').textContent = `Hello, ${username || 'Player'}!`;
 
-// Mostrar información en pantalla
-document.getElementById("timer").textContent = `Tiempo: ${duration} min`;
-document.getElementById("playerLives").textContent = `Vidas: ${lives}`;
+    const gameConfig = {
+        host: username,
+        scenario: 'Forest',
+        duration: 5,
+        playerCount: 2,
+        blockCount: 15,
+        powerUps: 10,
+        livesPerPlayer: 3,
+        code: null,
+        players: [username]
+    };
 
-console.log("Iniciando juego con configuración:");
-console.log("Duración:", duration);
-console.log("Jugadores:", players);
-console.log("Bloques:", blocks);
-console.log("Vidas:", lives);
+    // ------------------------ Dropdown de escenario ------------------------
+    const scenarioDropdown = document.getElementById('scenarioDropdown');
+    const scenarioToggle = document.getElementById('scenarioToggle');
+    const scenarioMenu = document.getElementById('scenarioMenu');
+    const selectedScenarioImage = document.getElementById('selectedScenarioImage');
+    const selectedScenarioName = document.getElementById('selectedScenarioName');
 
-// Escuchar las teclas y enviar movimiento al backend
-// Escuchar las teclas y enviar movimiento al backend
-document.addEventListener("keydown", (event) => {
-    let direction = null;
-    let action = null;
+    scenarioToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        scenarioDropdown.classList.toggle('active');
+    });
 
-    if (event.key === "ArrowUp") direction = "UP";
-    if (event.key === "ArrowDown") direction = "DOWN";
-    if (event.key === "ArrowLeft") direction = "LEFT";
-    if (event.key === "ArrowRight") direction = "RIGHT";
-// Dentro del event listener para colocar bombas:
-    if (event.key === "f" || event.key === "F") {
-// Al colocar bomba
-        fetch('/game/placeBomb', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Mostrar bomba
-                    drawMap(data.map);
+    document.querySelectorAll('.scenario-option').forEach(option => {
+        option.addEventListener('click', () => {
+            const scenario = option.dataset.scenario;
+            const imgSrc = option.querySelector('img').src;
+            const scenarioName = option.querySelector('.scenario-name').textContent;
 
-                    // Explotar después de 3 segundos
-                    setTimeout(() => {
-                        fetch('/game/explode', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data.bomb)
-                        })
-                            .then(response => response.text())
-                            .then(map => {
-                                // Mostrar explosión
-                                drawMap(map);
+            selectedScenarioImage.src = imgSrc;
+            selectedScenarioName.textContent = scenarioName;
+            gameConfig.scenario = scenario;
 
-                                // Ocultar explosión después de 1 segundo
-                                setTimeout(() => {
-                                    fetch('/game/clearExplosion', {
-                                        method: 'POST',
-                                        body: JSON.stringify(data.bomb)
-                                    })
-                                        .then(response => response.text())
-                                        .then(finalMap => drawMap(finalMap));
-                                }, 1000);
-                            });
-                    }, 3000);
-                }
-            });
-    }
+            scenarioDropdown.classList.remove('active');
+            updateConfigSummary();
+        });
+    });
 
-    function handleBombPlacement(data) {
-        // Mostrar bomba
-        drawMap(data.map);
+    document.addEventListener('click', () => {
+        scenarioDropdown.classList.remove('active');
+    });
 
-        // Pre-explosión a los 2 segundos (1s antes de desaparecer)
-        setTimeout(() => {
-            fetch('/game/preExplode', {
-                method: 'POST',
-                body: JSON.stringify({x: data.x, y: data.y})
+    // ------------------------ Tabs ------------------------
+    const createTab = document.getElementById('create-tab');
+    const joinTab = document.getElementById('join-tab');
+    const createContent = document.getElementById('create-content');
+    const joinContent = document.getElementById('join-content');
+
+    createTab.addEventListener('click', () => switchTab(createTab, createContent, joinTab, joinContent));
+    joinTab.addEventListener('click', () => switchTab(joinTab, joinContent, createTab, createContent));
+
+    const switchTab = (activeTab, activeContent, inactiveTab, inactiveContent) => {
+        activeTab.classList.add('active');
+        inactiveTab.classList.remove('active');
+        activeContent.classList.add('active');
+        inactiveContent.classList.remove('active');
+        clearErrorMessages();
+    };
+
+    // ------------------------ Utils ------------------------
+    const generateGameCode = () => Math.floor(10000 + Math.random() * 90000).toString();
+
+    const updateConfigSummary = () => {
+        const configDiv = document.getElementById('config-details');
+        configDiv.innerHTML = `
+            <strong>Host:</strong> ${gameConfig.host}<br>
+            <strong>Scenario:</strong> ${gameConfig.scenario}<br>
+            <strong>Duration:</strong> ${gameConfig.duration} minutes<br>
+            <strong>Players:</strong> ${gameConfig.playerCount}<br>
+            <strong>Blocks:</strong> ${gameConfig.blockCount}<br>
+            <strong>Power-Ups:</strong> ${gameConfig.powerUps}<br>
+            <strong>Lives per player:</strong> ${gameConfig.livesPerPlayer}
+        `;
+    };
+
+    const clearErrorMessages = () => {
+        document.getElementById('error-message').textContent = '';
+        document.getElementById('join-error-message').textContent = '';
+    };
+
+    // ------------------------ Validación código de unión ------------------------
+    document.getElementById('gameCodeInput').addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+        clearErrorMessages();
+    });
+
+    // ------------------------ Crear partida ------------------------
+    document.getElementById('createGameBtn').addEventListener('click', async () => {
+        clearErrorMessages();
+
+        const playerCount = parseInt(document.getElementById('playerCount').value);
+        const blockCount = parseInt(document.getElementById('blockCount').value);
+        const lives = parseInt(document.getElementById('livesCount').value);
+        const powerUps = parseInt(document.getElementById('powerUps').value);
+
+        if (playerCount < 1 || playerCount > 4) return showError('Player count must be between 1 and 4');
+        if (blockCount < 1 || blockCount > 30) return showError('Block count must be between 1 and 30');
+        if (lives < 1 || lives > 10) return showError('Lives must be between 1 and 10');
+        if (powerUps < 0 || powerUps > 30) return showError('Power-Ups must be between 0 and 30');
+
+        gameConfig.playerCount = playerCount;
+        gameConfig.blockCount = blockCount;
+        gameConfig.livesPerPlayer = lives;
+        gameConfig.powerUps = powerUps;
+        gameConfig.duration = parseInt(document.getElementById('gameDuration').value);
+        gameConfig.code = generateGameCode();
+
+        const spinner = document.getElementById('createSpinner');
+        spinner.style.display = 'block';
+
+        // Mock para test
+        const response = {
+            ok: true,
+            json: async () => ({ ...gameConfig, status: 'waiting' })
+        };
+
+        if (!response.ok) return showError('Failed to create game');
+
+        const gameData = await response.json();
+        document.getElementById('game-code').textContent = gameData.code;
+        document.getElementById('game-code-display').style.display = 'block';
+
+        redirectToLobby(gameData);
+        spinner.style.display = 'none';
+    });
+
+    // ------------------------ Unirse a partida ------------------------
+    document.getElementById('joinGameBtn').addEventListener('click', async () => {
+        const code = document.getElementById('gameCodeInput').value.trim();
+        const errorEl = document.getElementById('join-error-message');
+        const spinner = document.getElementById('joinSpinner');
+
+        if (code.length !== 5) return (errorEl.textContent = 'Enter a valid 5-digit code');
+
+        spinner.style.display = 'block';
+
+        const response = {
+            ok: true,
+            json: async () => ({
+                code,
+                scenario: 'Forest',
+                duration: 5,
+                playerCount: 2,
+                blockCount: 15,
+                powerUps: 10,
+                livesPerPlayer: 3,
+                players: ['hostPlayer', username],
+                host: 'hostPlayer',
+                status: 'waiting'
             })
-                .then(() => drawMap());
+        };
 
-            // Explosión real a los 3 segundos
-            setTimeout(() => {
-                fetch('/game/explode', {
-                    method: 'POST',
-                    body: JSON.stringify({x: data.x, y: data.y})
-                })
-                    .then(() => drawMap());
+        if (!response.ok) return (errorEl.textContent = 'Could not join game');
 
-                // Limpiar después de 1 segundo más
-                setTimeout(() => {
-                    fetch('/game/clearExplosion', {
-                        method: 'POST',
-                        body: JSON.stringify({x: data.x, y: data.y})
-                    })
-                        .then(() => drawMap());
-                }, 1000);
-            }, 1000);
-        }, 2000);
-    }
+        const gameData = await response.json();
+        redirectToLobby(gameData);
+        spinner.style.display = 'none';
+    });
 
-    if (direction) {
-        fetch(`http://localhost:8080/game/move?direction=${direction}`, { method: "POST" })
-            .then(response => response.text())
-            .then(updatedMap => {
-                console.log("Mapa actualizado desde el servidor:\n", updatedMap);
-                drawMap(updatedMap);
-            })
-            .catch(error => console.error("Error al mover el jugador:", error));
-    }
+    const redirectToLobby = (gameData) => {
+        sessionStorage.setItem('gameConfig', JSON.stringify(gameData));
+        sessionStorage.setItem('username', username);
+        window.location.href = '/lobby.html';
+    };
 
-    if (action === "PLACE_BOMB") {
-        fetch(`http://localhost:8080/game/placeBomb`, { method: "POST" })
-            .then(response => response.text())
-            .then(response => {
-                const parts = response.split("|");
-                const updatedMap = parts[0];
-                console.log("Bomba colocada. Mapa actualizado:\n", updatedMap);
-                drawMap(updatedMap);
+    const showError = (msg) => {
+        document.getElementById('error-message').textContent = msg;
+    };
 
-                // Si se devolvió la posición de la bomba
-                if (parts.length > 1) {
-                    const [x, y] = parts[1].split(",").map(Number);
+    // ------------------------ Socket: ENVIAR y ESCUCHAR ------------------------
+    const socket = new WebSocket("ws://localhost:8080/ws");
 
-                    // Eliminar la bomba después de 3 segundos
-                    setTimeout(() => {
-                        fetch(`http://localhost:8080/game/removeBomb?x=${x}&y=${y}`, { method: "POST" })
-                            .then(response => response.text())
-                            .then(updatedMap => {
-                                console.log("Bomba eliminada. Mapa actualizado:\n", updatedMap);
-                                drawMap(updatedMap);
-                            })
-                            .catch(error => console.error("Error al eliminar bomba:", error));
-                    }, 3000);
-                }
-            })
-            .catch(error => console.error("Error al colocar bomba:", error));
-    }
+    socket.addEventListener('open', () => {
+        console.log("Connected to WS");
+    });
+
+    socket.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "START") {
+            const playerPositions = data.positions;
+            sessionStorage.setItem('playerPositions', JSON.stringify(playerPositions));
+            window.location.href = "/game.html"; // Inicia juego
+        }
+    });
+
+    updateConfigSummary();
 });
-
-// Simulación de un temporizador
-let timeLeft = duration * 60;
-const timerElement = document.getElementById("timer");
-
-function updateTimer() {
-    let minutes = Math.floor(timeLeft / 60);
-    let seconds = timeLeft % 60;
-    timerElement.textContent = `Tiempo: ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-
-    if (timeLeft > 0) {
-        timeLeft--;
-        setTimeout(updateTimer, 1000);
-    } else {
-        alert("¡Tiempo terminado!");
-    }
-}
-
-updateTimer();
-
-// Función para cargar el mapa inicial desde el backend
-function loadGameMap() {
-    fetch('http://localhost:8080/game/map')
-        .then(response => response.text())
-        .then(mapString => {
-            console.log("Mapa recibido:\n" + mapString);
-            drawMap(mapString);
-        })
-        .catch(error => console.error("Error cargando el mapa:", error));
-}
-
-// Función para dibujar el mapa en el canvas
-function drawMap(mapString) {
-    const canvas = document.getElementById("gameCanvas");
-    const ctx = canvas.getContext("2d");
-
-    const cellSize = 40;
-    let rows = mapString.trim().split("\n").map(row => row.split(""));
-    const cols = rows[0].length;
-
-    canvas.width = cols * cellSize;
-    canvas.height = rows.length * cellSize;
-
-    // Hacer el fondo del canvas transparente
-    canvas.style.backgroundColor = "transparent";
-
-    // Cargar todas las imágenes necesarias
-    const wallImage = new Image();
-    wallImage.src = "/img/Wall.png";
-    const playerImage = new Image();
-    playerImage.src = "/img/Player.png";
-    const bombImage = new Image();  // Nueva imagen para la bomba
-    bombImage.src = "/img/Bomb.png";
-    const explosionImage = new Image();
-    explosionImage.src = "/img/Explotion.png";
-
-    // Esperar a que todas las imágenes carguen
-    let imagesLoaded = 0;
-    const totalImages = 3;
-
-    function checkAllImagesLoaded() {
-        imagesLoaded++;
-        if (imagesLoaded === totalImages) {
-            drawAllElements();
-        }
-    }
-
-    wallImage.onload = checkAllImagesLoaded;
-    playerImage.onload = checkAllImagesLoaded;
-    bombImage.onload = checkAllImagesLoaded;
-
-    function drawAllElements() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        for (let y = 0; y < rows.length; y++) {
-            for (let x = 0; x < cols; x++) {
-                // Dibujar elementos según su tipo
-                if (rows[y][x] === "#") {
-                    ctx.drawImage(wallImage, x * cellSize, y * cellSize, cellSize, cellSize);
-                } else if (rows[y][x] === "P") {
-                    ctx.drawImage(playerImage, x * cellSize, y * cellSize, cellSize, cellSize);
-                } else if (rows[y][x] === "B") {
-                    ctx.drawImage(bombImage, x * cellSize, y * cellSize, cellSize, cellSize);
-                } else if (rows[y][x] === "E") { // Para explosiones
-                ctx.drawImage(explosionImage, x * cellSize, y * cellSize, cellSize, cellSize);
-            }
-
-                // Dibujar líneas de la cuadrícula
-                ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
-                ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
-            }
-        }
-    }
-
-
-
-
-
-
-}
-
-// Cargar el mapa cuando se abra `game.html`
-window.onload = loadGameMap;
