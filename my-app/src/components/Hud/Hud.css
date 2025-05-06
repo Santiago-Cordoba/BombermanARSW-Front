@@ -1,87 +1,44 @@
 .hud-container {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 30px;
-    background-color: rgba(0, 30, 60, 0.7);
-    padding: 15px 30px;
-    border-radius: 10px;
-    border: 2px solid rgba(0, 120, 255, 0.5);
-    box-shadow: 0 0 15px rgba(0, 90, 190, 0.5);
-    z-index: 10;
-    backdrop-filter: blur(5px);
-  }
-  
-  .hud-section {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'Courier New', monospace;
-  }
-  
-  .hud-icon {
-    font-size: 1.2rem;
-  }
-  
-  .hud-value {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #fff;
-    min-width: 30px;
-    text-align: center;
-    text-shadow: 0 0 5px rgba(0, 180, 255, 0.8);
-  }
-  
-  .hud-container::before {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border: 2px solid rgba(0, 150, 255, 0.3);
-    border-radius: 10px;
-    pointer-events: none;
-    animation: hudGlow 2s infinite alternate;
-  }
-  
-  @keyframes hudGlow {
-    from {
-      box-shadow: 0 0 5px rgba(0, 150, 255, 0.3);
-    }
-    to {
-      box-shadow: 0 0 15px rgba(0, 150, 255, 0.6);
-    }
-  }
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
 
-  .hud-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: white;
-    border-radius: 5px;
-    font-family: 'Arial', sans-serif;
-  }
-  
-  .hud-section {
-    display: flex;
-    gap: 20px;
-  }
-  
-  .life-gained {
-    color: #4CAF50;
-    font-weight: bold;
-    margin-left: 5px;
-    animation: fadeInOut 2s ease-in-out;
-  }
-  
-  @keyframes fadeInOut {
-    0% { opacity: 0; transform: translateY(10px); }
-    20% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-10px); }
-  }
+.hud-section {
+  display: flex;
+  gap: 20px;
+}
+
+.hud-lives {
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.hud-lives.changing {
+  color: #ffcc00;
+  font-weight: bold;
+}
+
+.life-change {
+  position: absolute;
+  margin-left: 5px;
+  font-weight: bold;
+  animation: fadeInOut 1s ease-in-out;
+}
+
+.life-change.gained {
+  color: #4CAF50;
+}
+
+.life-change.lost {
+  color: #F44336;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  50% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(10px); }
+}

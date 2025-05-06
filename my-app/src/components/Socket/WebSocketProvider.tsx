@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useRef, useState, useCallback } from 'react';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
-// Tipos para los mensajes STOMP
 type MessageBody = Record<string, unknown> | unknown[];
 
 interface WebSocketContextType {
@@ -36,7 +35,7 @@ export const WebSocketProvider: React.FC<{children: React.ReactNode}> = ({ child
       }
 
       const client = new Client({
-        brokerURL: 'wss://bomberman-d0fcfvdjhrezgxcz.canadacentral-01.azurewebsites.net/ws',
+        brokerURL: 'ws://localhost:8080/ws',
 
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
