@@ -1,0 +1,26 @@
+.bomb {
+    width: 28px;
+    height: 28px;
+    background-color: #333;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    z-index: 2;
+  }
+  
+  .owner-bomb {
+    border: 2px solid #ffcc00;
+  }
+  
+  .bomb-timer {
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+  }
+  
+  .game-cell:hover .bomb {
+    transform: scale(1.1);
+    transition: transform 0.2s;
+  }

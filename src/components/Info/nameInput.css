@@ -1,0 +1,61 @@
+/* Contenedor del formulario retro */
+.retro-form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  /* Formulario retro */
+  .retro-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    background-color: #000000; /* Fondo negro */
+    padding: 30px;
+    border: 4px solid #ffcc00; /* Borde amarillo neón */
+    box-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00; /* Brillo amarillo */
+  }
+  
+  /* Etiqueta retro */
+  .retro-label {
+    font-size: 1.2rem;
+    color: #ffcc00; /* Texto amarillo neón */
+    text-shadow: 2px 2px 4px rgba(255, 204, 0, 0.7); /* Sombra amarilla */
+  }
+  
+  /* Campo de entrada retro */
+  .retro-input {
+    padding: 10px;
+    font-size: 1rem;
+    color: #ffcc00; /* Texto amarillo neón */
+    background-color: #000000; /* Fondo negro */
+    border: 2px solid #ffcc00; /* Borde amarillo neón */
+    box-shadow: 0 0 5px #ffcc00, 0 0 10px #ffcc00; /* Brillo amarillo */
+    outline: none;
+  }
+  
+  .retro-input::placeholder {
+    color: #ffcc00; /* Placeholder amarillo neón */
+    opacity: 0.7;
+  }
+  
+ /* Mensaje de bienvenida */
+.retro-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  background-color: #000000; /* Fondo negro */
+  padding: 30px;
+  border: 4px solid #ffcc00; /* Borde amarillo neón */
+  box-shadow: 0 0 10px #ffcc00, 0 0 20px #ffcc00; /* Brillo amarillo */
+  color: #ffcc00; /* Texto amarillo neón */
+  text-shadow: 2px 2px 4px rgba(255, 204, 0, 0.7); /* Sombra amarilla */
+}
+
+.retro-name {
+  font-weight: bold;
+  color: #ffcc00; /* Color adicional para resaltar el nombre */
+}
