@@ -1,0 +1,620 @@
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { useWebSocket } from '../../components/Socket/WebSocketProvider';
+import './GamePage.css';
+import HUD from '../../components/Hud/Hud';
+import p1 from '../../images/p1.png';
+import p2 from '../../images/p2.png';
+import p3 from '../../images/p3.png';
+import p4 from '../../images/p4.png';
+import { PowerUpManager } from '../../components/powerupLife';
+import invIcon from '../../images/powerup3.png';
+
+const getPlayerImage = (playerName: string) => {
+  switch(playerName) {
+    case '1': return p1;
+    case '2': return p2;
+    case '3': return p3;
+    case '4': return p4;
+    default: return p1;
+  }
+};
+
+type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'BOMB';
+
+type GameConfig = {
+  duration: number;
+  lives: number;
+};
+
+type Player = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  bombCapacity: number;
+  maxBombs: number;
+  bombRange: number;
+  lives:number;
+  isInvincible?: boolean; 
+};
+
+export type GameCell = {
+  isDestructible: boolean;
+  hasPowerUp: boolean;
+  powerUpType?: 'BOMB' | 'FIRE' | 'SPEED' | 'INVINCIBILITY';
+  x: number;
+  y: number;
+  isWall: boolean;
+};
+
+type Bomb = {
+  id: string;
+  x: number;
+  y: number;
+  range: number;
+  timer: number;
+  playerId: string;
+};
+
+type Explosion = {
+  x: number;
+  y: number;
+  timer: number;
+  isCenter?: boolean;
+};
+
+type GameMap = {
+  width: number;
+  height: number;
+  cells: GameCell[][];
+};
+
+type GameMessage = {
+  type: string;
+  config?: GameConfig;
+  players: Player[];
+  map?: GameMap;
+  bombs?: { 
+    id: string;
+    x: number;
+    y: number;
+    timer: number;
+    range: number;
+    playerId: string;
+  }[];
+  powerUps?: {  
+    type: string;
+    x: number;
+    y: number;
+  }[];
+};
+
+type PlayerMoveRequest = {
+  playerId: string;
+  newX: number;
+  newY: number;
+  direction: Direction;
+};
+
+const GamePage: React.FC = () => {
+  const { roomCode } = useParams<{ roomCode: string }>();
+  const location = useLocation();
+  const { subscribe, isConnected, sendMessage } = useWebSocket();
+  const gameContainerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number>(0);
+
+  const [gameState, setGameState] = useState<GameMessage | null>(null);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [bombs, setBombs] = useState<Bomb[]>([]);
+  const [explosions, setExplosions] = useState<Explosion[]>([]);
+  const [localPowerUps, setLocalPowerUps] = useState<
+    { x: number; y: number; type: 'BOMB' | 'FIRE' | 'SPEED' | 'INVINCIBILITY' }[]
+  >([]);
+  const [timeLeft, setTimeLeft] = useState<number>(300);
+  const [playerLives, setPlayerLives] = useState<number>(3);
+  const [gameActive, setGameActive] = useState<boolean>(false);
+
+  const defaultMap = useMemo<GameMap>(() => ({
+    width: 15,
+    height: 13,
+    cells: Array(13).fill(null).map((_, y) => 
+      Array(15).fill(null).map((_, x) => ({
+        x,
+        y,
+        isWall: x === 0 || y === 0 || x === 14 || y === 12 || (x % 2 === 0 && y % 2 === 0),
+        isDestructible: Math.random() < 0.3 && !(x % 2 === 0 && y % 2 === 0),
+        hasPowerUp: Math.random() < 0.1,
+        powerUpType: ['BOMB', 'FIRE', 'SPEED', 'INVINCIBILITY'][Math.floor(Math.random() * 4)] as 'BOMB' | 'FIRE' | 'SPEED' | 'INVINCIBILITY'
+      }))
+    )
+  }), []);
+
+  const defaultConfig = useMemo<GameConfig>(() => ({
+    duration: 300,
+    lives: 3
+  }), []);
+
+  const gameLoop = useCallback(() => {
+    setBombs(prevBombs => {
+      const updatedBombs = prevBombs.map(bomb => ({
+        ...bomb,
+        timer: bomb.timer > 0 ? bomb.timer - 0.016 : 0
+      })).filter(bomb => bomb.timer > 0);
+
+      const explodedBombs = prevBombs.filter(bomb => 
+        bomb.timer <= 0 && !updatedBombs.some(b => b.id === bomb.id)
+      );
+
+      if (explodedBombs.length > 0) {
+        const newExplosions: Explosion[] = [];
+        
+        explodedBombs.forEach(bomb => {
+          newExplosions.push({ 
+            x: bomb.x, 
+            y: bomb.y, 
+            timer: 1,
+            isCenter: true 
+          });
+          
+          for (let i = 1; i <= bomb.range; i++) {
+            if (bomb.y - i >= 0) newExplosions.push({ x: bomb.x, y: bomb.y - i, timer: 1, isCenter: false });
+            if (bomb.y + i < defaultMap.height) newExplosions.push({ x: bomb.x, y: bomb.y + i, timer: 1, isCenter: false });
+            if (bomb.x - i >= 0) newExplosions.push({ x: bomb.x - i, y: bomb.y, timer: 1, isCenter: false });
+            if (bomb.x + i < defaultMap.width) newExplosions.push({ x: bomb.x + i, y: bomb.y, timer: 1, isCenter: false });
+          }
+        });
+
+        setExplosions(prev => [...prev, ...newExplosions]);
+      }
+
+      return updatedBombs;
+    });
+
+    setExplosions(prev => 
+      prev.map(exp => ({
+        ...exp,
+        timer: exp.timer > 0 ? exp.timer - 0.016 : 0
+      })).filter(exp => exp.timer > 0)
+    );
+
+    animationRef.current = requestAnimationFrame(gameLoop);
+  }, [defaultMap]);
+
+  useEffect(() => {
+    animationRef.current = requestAnimationFrame(gameLoop);
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [gameLoop]);
+
+  useEffect(() => {
+    console.log('Inicializando juego...');
+    console.log('Datos de location.state:', location.state);
+
+    if (location.state?.initialGameData) {
+      console.log('Estableciendo datos iniciales del juego');
+      setGameState({
+        ...location.state.initialGameData,
+        map: location.state.initialGameData.map || defaultMap,
+        config: location.state.initialGameData.config || defaultConfig
+      });
+    }
+
+    const playerId = location.state?.playerId || localStorage.getItem('bomberman-playerId');
+    if (playerId) {
+      console.log('Estableciendo ID de jugador:', playerId);
+      setCurrentPlayerId(playerId);
+      localStorage.setItem('bomberman-playerId', playerId);
+    } else {
+      console.error('No se encontró playerId en location.state ni en localStorage');
+    }
+
+    setLoading(false);
+  }, [location.state, defaultMap, defaultConfig]);
+
+  const placeBomb = useCallback((playerId: string, x: number, y: number) => {
+    const currentPlayer = gameState?.players.find(p => p.id === playerId);
+    if (!currentPlayer) return;
+
+    const activeBombs = bombs.filter(b => b.playerId === playerId);
+    if (activeBombs.length >= currentPlayer.maxBombs) return;
+
+    const newBomb = {
+      id: `bomb-${x}-${y}-${Date.now()}`,
+      x,
+      y,
+      range: currentPlayer.bombRange,
+      timer: 2,
+      playerId
+    };
+    
+    setBombs(prev => [...prev, newBomb]);
+
+    sendMessage(`/app/game/${roomCode}/placeBomb`, {
+      playerId: currentPlayerId,
+      x,
+      y
+    });
+  }, [gameState?.players, bombs, currentPlayerId, roomCode, sendMessage]);
+
+  const collectPowerUp = useCallback((playerId: string, x: number, y: number) => {
+    const powerUpIndex = localPowerUps.findIndex(pu => pu.x === x && pu.y === y);
+    if (powerUpIndex === -1) return;
+
+    const powerUp = localPowerUps[powerUpIndex];
+    setGameState(prev => {
+      if (!prev) return null;
+      
+      return {
+        ...prev,
+        players: prev.players.map(p => {
+          if (p.id !== playerId) return p;
+          
+          switch (powerUp.type) {
+            case 'BOMB':
+              return { ...p, maxBombs: p.maxBombs + 1 };
+            case 'FIRE':
+              return { ...p, bombRange: p.bombRange + 1 };
+            case 'SPEED':
+              return p;
+            case 'INVINCIBILITY':
+              // Aplicar efecto visual temporal de parpadeo
+              const updatedPlayer = { ...p, isInvincible: true };
+              setTimeout(() => {
+                setGameState(prev => {
+                  if (!prev) return null;
+                  return {
+                    ...prev,
+                    players: prev.players.map(pl =>
+                      pl.id === playerId ? { ...pl, isInvincible: false } : pl
+                    )
+                  };
+                });
+              }, 15000); // 15 segundos de duración
+              return updatedPlayer;
+
+            default:
+              return p;
+          }
+        })
+      };
+    });
+
+    setLocalPowerUps(prev => prev.filter((_, i) => i !== powerUpIndex));
+  }, [localPowerUps]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (loading || !currentPlayerId || !gameState?.map) return;
+
+    const directionMap: Record<string, Direction> = {
+      'ArrowUp': 'UP', 'KeyW': 'UP',
+      'ArrowDown': 'DOWN', 'KeyS': 'DOWN',
+      'ArrowLeft': 'LEFT', 'KeyA': 'LEFT',
+      'ArrowRight': 'RIGHT', 'KeyD': 'RIGHT',
+      'Space': 'BOMB',
+    };
+
+    const direction = directionMap[e.code];
+    if (!direction) return;
+
+    e.preventDefault();
+
+    const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
+    if (!currentPlayer) return;
+
+    if (direction === 'BOMB') {
+      const existingBomb = bombs.find(b => b.x === currentPlayer.x && b.y === currentPlayer.y);
+      if (!existingBomb) {
+        placeBomb(currentPlayerId, currentPlayer.x, currentPlayer.y);
+      }
+      return;
+    }
+
+    let newX = currentPlayer.x;
+    let newY = currentPlayer.y;
+
+    switch (direction) {
+      case 'UP': newY -= 1; break;
+      case 'DOWN': newY += 1; break;
+      case 'LEFT': newX -= 1; break;
+      case 'RIGHT': newX += 1; break;
+    }
+
+    if (newX < 0 || newY < 0 || newX >= gameState.map.width || newY >= gameState.map.height) {
+      return;
+    }
+
+    const targetCell = gameState.map.cells[newY]?.[newX];
+    if (!targetCell || targetCell.isWall) {
+      return;
+    }
+
+    const bombInTarget = bombs.some(b => b.x === newX && b.y === newY);
+    if (bombInTarget) {
+      return;
+    }
+
+    const playerInTarget = gameState.players.some(p => 
+      p.id !== currentPlayerId && p.x === newX && p.y === newY
+    );
+    if (playerInTarget) {
+      return;
+    }
+
+    const powerUpInTarget = localPowerUps.some(pu => pu.x === newX && pu.y === newY);
+    if (powerUpInTarget) {
+      collectPowerUp(currentPlayerId, newX, newY);
+      
+      sendMessage(`/app/game/${roomCode}/collectPowerUp`, {
+        playerId: currentPlayerId,
+        x: newX,
+        y: newY
+      });
+    }
+
+
+    sendMessage<PlayerMoveRequest>(`/app/game/${roomCode}/move`, {
+      playerId: currentPlayerId,
+      newX,
+      newY,
+      direction
+    });
+  }, [currentPlayerId, gameState, loading, placeBomb, collectPowerUp, bombs, localPowerUps, roomCode, sendMessage]);
+
+  useEffect(() => {
+    if (loading) return;
+    const container = gameContainerRef.current;
+    if (!container) return;
+
+    container.focus();
+    container.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      container.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown, loading]);
+
+  useEffect(() => {
+    if (!isConnected || !roomCode || loading) return;
+  
+    const subscription = subscribe<GameMessage>(
+      `/topic/game/${roomCode}`,
+      (message) => {
+        console.log('Mensaje recibido:', message.type);
+        
+        if (message.type === 'GAME_START') {
+          setGameState({
+            ...message,
+            map: message.map || defaultMap,
+            config: message.config || defaultConfig
+          });
+          setTimeLeft(message.config?.duration || 300);
+          setPlayerLives(message.config?.lives || 3);
+          setGameActive(true);
+        } 
+        else if (message.type === 'GAME_UPDATE') {
+          // Actualizar bombas - importante mantener las bombas existentes
+          setBombs(prevBombs => {
+            const newBombs = message.bombs?.map(b => ({
+              id: b.id || `bomb-${b.x}-${b.y}-${Date.now()}`,
+              x: b.x,
+              y: b.y,
+              range: b.range || 1,
+              timer: b.timer || 2,
+              playerId: b.playerId
+            })) || [];
+            
+            // Combinar bombas nuevas con existentes, evitando duplicados
+            return [
+              ...prevBombs.filter(pb => 
+                !newBombs.some(nb => nb.x === pb.x && nb.y === pb.y)
+              ),
+              ...newBombs
+            ];
+          });
+          
+          // Actualizar tiempo y vidas
+          if (message.config) {
+            setTimeLeft(message.config.duration);
+          }
+          
+          // Actualizar vidas del jugador actual
+          if (currentPlayerId) {
+            const currentPlayer = message.players?.find(p => p.id === currentPlayerId);
+            if (currentPlayer) {
+              setPlayerLives(currentPlayer.lives);
+            }
+          }
+
+          if (message.powerUps) {
+            setLocalPowerUps(
+              message.powerUps.map(pu => ({
+                x: pu.x,
+                y: pu.y,
+                type: pu.type as 'BOMB' | 'FIRE' | 'SPEED' | 'INVINCIBILITY'
+              }))
+            );
+          }
+
+          setGameState(prev => {
+            const newState = {
+              ...prev,
+              players: message.players || prev?.players || [],
+              config: message.config || prev?.config || defaultConfig,
+              type: 'GAME_UPDATE'
+            };
+            
+
+            if (JSON.stringify(prev) === JSON.stringify(newState)) {
+              return {...newState, _forceUpdate: Date.now()};
+            }
+            return newState;
+          });
+        }
+      }
+    );
+  
+    return () => {
+      subscription?.unsubscribe();
+      setGameActive(false);
+    };
+  }, [isConnected, roomCode, subscribe, loading, defaultMap, defaultConfig, currentPlayerId]);
+
+  if (loading || !gameState || !currentPlayerId) {
+    return (
+      <div className="game-loading">
+        <h2>Sala: {roomCode}</h2>
+        <p>Cargando juego...</p>
+      </div>
+    );
+  }
+
+  const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
+  const displayMap = gameState.map || defaultMap;
+  const displayConfig = gameState.config || defaultConfig;
+
+  return (
+    <div className="game-container" ref={gameContainerRef} tabIndex={0}>
+      <div className="game-header">
+        <HUD
+          initialTime={timeLeft}
+          roomCode={roomCode || ''}
+          lives={playerLives}
+          isRunning={true}
+          onTimeEnd={() => console.log('¡Se acabó el tiempo!')}
+        />
+        {currentPlayer && (
+          <div className="player-stats">
+            <div className="player-bombs">
+              Bombas: {currentPlayer.maxBombs - bombs.filter(b => b.playerId === currentPlayerId).length}/{currentPlayer.maxBombs}
+            </div>
+            <div className="player-range">
+              Rango: {currentPlayer.bombRange}
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div 
+        className="game-map"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${displayMap.width}, 32px)`,
+          gridTemplateRows: `repeat(${displayMap.height}, 32px)`,
+          gap: '2px',
+          backgroundColor: '#111',
+          padding: '10px',
+          borderRadius: '8px'
+        }}
+      >
+        <PowerUpManager
+          boardSize={displayMap.width}
+          playerPosition={{
+            row: currentPlayer?.y || 0,
+            col: currentPlayer?.x || 0
+          }}
+          maxLives={displayConfig.lives}
+          currentLives={playerLives}
+          onCollect={() => {
+            if (currentPlayerId) {
+              sendMessage(`/app/game/${roomCode}/collectLife`, {
+                playerId: currentPlayerId
+              });
+            }
+          }}
+          gameMap={displayMap.cells}
+        >
+          {(renderPowerUp) => (
+            <>
+              {displayMap.cells.map((row, y) => (
+                <React.Fragment key={`row-${y}`}>
+                  {row.map((cell, x) => {
+                    const cellType = cell?.isWall 
+                      ? cell?.isDestructible ? 'destructible' : 'wall' 
+                      : 'empty';
+                    
+                    const player = gameState.players.find(p => p.x === x && p.y === y);
+                    const bomb = bombs.find(b => b.x === x && b.y === y);
+                    const explosion = explosions.find(e => e.x === x && e.y === y);
+                    const powerUp = localPowerUps.find(pu => pu.x === x && pu.y === y);
+                    
+                    return (
+                      <div 
+                        key={`cell-${x}-${y}`} 
+                        className={`game-cell ${cellType} ${
+                          explosion ? 'explosion' : ''
+                        } ${
+                          explosion?.isCenter ? 'explosion-center' : explosion ? 'explosion-arm' : ''
+                        }`}
+                      >
+                        {player && gameState.players.some(p => p.id === player.id) && (
+                          <div className={`game-player player-${player.name} ${
+                            player.id === currentPlayerId ? 'current-player' : ''
+                          } ${player.isInvincible ? 'invincible' : ''}`}>
+
+                            <img 
+                              src={getPlayerImage(player.name)} 
+                              alt={`Jugador ${player.name}`}
+                              className="player-avatar"
+                            />
+                            {player.id === currentPlayerId && (
+                              <div className="player-indicator"></div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {bomb && !explosion && (
+                          <div className="game-bomb" />
+                        )}
+                        
+                        {powerUp && !bomb && !explosion && (
+                          <div className={`game-power-up ${powerUp.type.toLowerCase()}`}>
+                            {{
+                              'BOMB': 'B+',
+                              'FIRE': 'F+',
+                              'SPEED': 'S+',
+                              'INVINCIBILITY': '⭐'
+                            }[powerUp.type]}
+                          </div>
+                        )}
+  
+                        {renderPowerUp(y, x)}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
+            </>
+          )}
+        </PowerUpManager>
+      </div>
+  
+      <div className="game-controls">
+        <p>Controles: Flechas o WASD para mover, Espacio para bombas</p>
+        <p className="player-info">
+          Jugador: <span className="player-name">{currentPlayer?.name || currentPlayerId}</span>
+        </p>
+        <div className="power-up-legend">
+          <div className="legend-item">
+            <span className="power-up-icon bomb">B+</span> = Más bombas
+          </div>
+          <div className="legend-item">
+            <span className="power-up-icon fire">F+</span> = Mayor rango
+          </div>
+          <div className="legend-item">
+            <span className="power-up-icon speed">S+</span> = Más velocidad
+          </div>
+          <div className="legend-item">
+            <span className="power-up-icon life">❤️</span> = Vida extra
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+  export default GamePage;
