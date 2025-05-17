@@ -8,7 +8,6 @@ import p2 from '../../images/p2.png';
 import p3 from '../../images/p3.png';
 import p4 from '../../images/p4.png';
 import { PowerUpManager } from '../../components/powerupLife';
-import invIcon from '../../images/powerup3.png';
 
 const getPlayerImage = (playerName: string) => {
   switch(playerName) {
@@ -36,7 +35,9 @@ type Player = {
   maxBombs: number;
   bombRange: number;
   lives:number;
-  isInvincible?: boolean; 
+    isInvincible?: boolean; 
+
+
 };
 
 export type GameCell = {
@@ -433,20 +434,17 @@ const GamePage: React.FC = () => {
             );
           }
 
-          setGameState(prev => {
-            const newState = {
-              ...prev,
-              players: message.players || prev?.players || [],
-              config: message.config || prev?.config || defaultConfig,
-              type: 'GAME_UPDATE'
-            };
-            
+    setGameState(prev => {
+      const newState = {
+        ...prev,
+        players: message.players || prev?.players || [],
+        config: message.config || prev?.config || defaultConfig,
+        map: message.map || prev?.map || defaultMap,
+        type: 'GAME_UPDATE'
+      };
+      return newState;
+    });
 
-            if (JSON.stringify(prev) === JSON.stringify(newState)) {
-              return {...newState, _forceUpdate: Date.now()};
-            }
-            return newState;
-          });
         }
       }
     );
