@@ -7,7 +7,7 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   const handleStartClick = () => {
-    navigate('/host'); // Redirige directamente a /host
+    navigate('/login'); // Redirige directamente a /host
   };
 
   return (

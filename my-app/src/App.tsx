@@ -8,6 +8,7 @@ import WaitingRoomPage from './pages/room/WaitingRoomPage';
 import CreateRoomForm from './pages/CreateRoom/createRoomForm';
 import RoomEntryPage from './pages/Entry/RoomEntryPage';
 import { WebSocketProvider } from './components/Socket/WebSocketProvider';
+import MicrosoftLogin from './pages/Login/LoginPage';
 import './App.css'; // Asegúrate de tener este archivo para los estilos
 
 function App() {
@@ -80,6 +81,7 @@ function App() {
           <Route path="/room/:roomCode" element={<WaitingRoomPage />} />
           <Route path="/create-room" element={<CreateRoomForm />} />
           <Route path="/entry" element={<RoomEntryPage />} />
+          <Route path="/login" element={<MicrosoftLogin />} />
         </Routes>
       </Router>
     </WebSocketProvider>

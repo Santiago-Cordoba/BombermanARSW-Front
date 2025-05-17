@@ -1,0 +1,106 @@
+/* Fuente retro */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Iconos */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+.retro-login-container {
+  background-color: rgba(0, 0, 0, 0.85);
+  border: 8px solid #ffeb3b;
+  border-radius: 10px;
+  padding: 40px;
+  width: 90%;
+  max-width: 500px;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 0 30px #ffeb3b;
+  font-family: 'Press Start 2P', cursive;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+}
+
+@keyframes flicker {
+  0% { box-shadow: 0 0 30px #ff5722; }
+  100% { box-shadow: 0 0 40px #4caf50, 0 0 60px #2196f3; }
+}
+
+.login-title {
+  color: #ffeb3b;
+  font-size: 2rem;
+  margin-bottom: 40px;
+  text-shadow: 4px 4px 0 #ff5722;
+  letter-spacing: 2px;
+}
+
+.login-subtitle {
+  color: #ffffff;
+  font-size: 0.8rem;
+  margin-bottom: 30px;
+  line-height: 1.5;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.retro-login-button {
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 0px;
+  padding: 15px 30px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 20px;
+  width: 80%;
+  text-transform: uppercase;
+  box-shadow: 0 5px 0 #0d8bf2;
+}
+
+.retro-login-button:hover {
+  background-color: #0d8bf2;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 #0b7ad1;
+}
+
+.retro-login-button:active {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 #0b7ad1;
+}
+
+.retro-login-button i {
+  font-size: 1.2rem;
+}
+
+.login-footer {
+  margin-top: 40px;
+  font-size: 0.6rem;
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.pixel-divider {
+  height: 4px;
+  background: linear-gradient(to right, 
+    #ff5722, #ffeb3b, #ff5722, #ffeb3b);
+  margin: 30px 0;
+  position: relative;
+}
+
+.pixel-divider::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(to right, 
+    transparent, transparent 3px, 
+    rgba(0,0,0,0.7) 3px, rgba(0,0,0,0.7) 6px);
+}
+
