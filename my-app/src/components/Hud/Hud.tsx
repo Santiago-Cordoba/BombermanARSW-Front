@@ -2,48 +2,23 @@ import React, { useEffect, useState } from "react";
 import "./Hud.css";
 
 interface HUDProps {
-  initialTime: number;
-  roomCode: string;
-  lives: number;
-  lifeChange?: number | null;
-  isRunning?: boolean;
-  onTimeEnd?: () => void;
+  time: number;            // Tiempo actual en segundos (manejado desde el padre)
+  roomCode: string;        // Código de la sala
+  lives: number;           // Vidas actuales del jugador
+  lifeChange?: number | null; // Cambio en vidas (para animación)
+  isRunning?: boolean;     // Si el juego está activo
+  onTimeEnd?: () => void;  // Callback cuando el tiempo llega a 0
 }
 
 const HUD: React.FC<HUDProps> = ({ 
-  initialTime, 
+  time, 
   roomCode,
   lives,
   lifeChange,
   isRunning = true,
   onTimeEnd
 }) => {
-  const [time, setTime] = useState(initialTime);
-  const [displayLives, setDisplayLives] = useState(lives);
   const [showLifeChange, setShowLifeChange] = useState(false);
-
-  // Sincronizar tiempo cuando cambia initialTime
-  useEffect(() => {
-    setTime(initialTime);
-  }, [initialTime]);
-
-  // Efecto para el contador de tiempo
-  useEffect(() => {
-    if (!isRunning) return;
-
-    const timer = setInterval(() => {
-      setTime(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onTimeEnd?.();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [isRunning, onTimeEnd]);
 
   // Efecto para animación de cambios de vida
   useEffect(() => {
@@ -54,6 +29,7 @@ const HUD: React.FC<HUDProps> = ({
     }
   }, [lifeChange]);
 
+  // Formatear tiempo como MM:SS
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -63,13 +39,13 @@ const HUD: React.FC<HUDProps> = ({
   return (
     <div className="hud-container">
       <div className="hud-section">
-        <div className="hud-room-code">Room: {roomCode}</div>
-        <div className="hud-time">Time: {formatTime(time)}</div>
+        <div className="hud-room-code">Sala: {roomCode}</div>
+        <div className="hud-time">Tiempo: {formatTime(time)}</div>
       </div>
       
       <div className="hud-section">
         <div className={`hud-lives ${showLifeChange ? 'changing' : ''}`}>
-          Lives: {lives}
+          Vidas: {lives}
           {showLifeChange && lifeChange && (
             <span className={`life-change ${lifeChange > 0 ? 'gained' : 'lost'}`}>
               {lifeChange > 0 ? `+${lifeChange}` : lifeChange}

@@ -58,6 +58,11 @@ const WaitingRoomPage: React.FC = () => {
     const [isHost, setIsHost] = useState(false);
     const [error, setError] = useState('');
     const [gameStarting, setGameStarting] = useState(false);
+    const [gameConfig, setGameConfig] = useState({
+        lives: 3,
+        duration: 180
+    });
+    
     
     const { isConnected, connect, disconnect, subscribe, sendMessage } = useWebSocket();
 
@@ -124,6 +129,16 @@ const WaitingRoomPage: React.FC = () => {
         };
     }, [roomCode, playerName, navigate, gameStarting, connect, subscribe]);
 
+
+    const handleConfigChange = useCallback((newConfig: { lives: number; duration: number }) => {
+        setGameConfig(newConfig);
+        if (isHost) {
+            sendMessage(`/app/room/${roomCode}/config`, { 
+                config: newConfig
+            });
+        }
+    }, [isHost, roomCode, sendMessage]);
+
     const handleToggleReady = useCallback(() => {
         const playerId = players.find(p => p.name === playerName)?.id;
         if (playerId) {
@@ -138,13 +153,15 @@ const WaitingRoomPage: React.FC = () => {
             console.log('Sending start game request'); // Debug
             sendMessage(`/app/room/${roomCode}/start`, { 
                 playerId: player.id,
-                roomCode: roomCode,
-                action: 'start_game',
+                config: {  // <-- Envía la configuración actual
+                    lives: gameConfig.lives,
+                    duration: gameConfig.duration
+                },
                 timestamp: Date.now()
             });
         }
     }
-}, [isHost, playerName, players, roomCode, sendMessage]);
+}, [isHost, playerName, players, roomCode, sendMessage, gameConfig]);
 
     const handleLeaveRoom = useCallback(() => {
         const playerId = players.find(p => p.name === playerName)?.id;
@@ -175,6 +192,8 @@ const WaitingRoomPage: React.FC = () => {
             isHost={isHost}
             isConnected={isConnected}
             error={error}
+            onConfigChange={handleConfigChange}
+            initialConfig={gameConfig}
         />
     );
 };

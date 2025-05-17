@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import './WaitingRoom.css';
 
 interface Player {
@@ -18,6 +19,8 @@ interface RetroWaitingRoomProps {
     isHost?: boolean;
     isConnected?: boolean;
     error?: string;
+    onConfigChange?: (config: { lives: number; duration: number }) => void;
+    initialConfig?: { lives: number; duration: number };
 }
 
 const RetroWaitingRoom: React.FC<RetroWaitingRoomProps> = ({
@@ -29,9 +32,19 @@ const RetroWaitingRoom: React.FC<RetroWaitingRoomProps> = ({
     onLeaveRoom = () => {},
     isHost = false,
     isConnected = false,
-    error = ''
+    error = '',
+    onConfigChange = () => {},
+    initialConfig = { lives: 3, duration: 180 }
 }) => {
     const currentPlayer = players.find(p => p.name === currentPlayerName);
+    const [config, setConfig] = useState(initialConfig);
+
+
+     const handleConfigChange = (key: 'lives' | 'duration', value: number) => {
+        const newConfig = { ...config, [key]: value };
+        setConfig(newConfig);
+        onConfigChange(newConfig);
+    };
 
     return (
         <div className="retro-waiting-room">
@@ -46,6 +59,54 @@ const RetroWaitingRoom: React.FC<RetroWaitingRoomProps> = ({
                 {isHost && <p className="host-marker">(Eres el host)</p>}
                 {error && <p className="error-message">{error}</p>}
             </div>
+
+            {isHost && (
+                <div className="retro-config-panel">
+                    <h3 className="config-title">CONFIGURACIÓN</h3>
+                    
+                    <div className="config-item">
+                        <label>VIDAS:</label>
+                        <div className="config-controls">
+                            <button 
+                                className="config-button"
+                                onClick={() => handleConfigChange('lives', Math.max(1, config.lives - 1))}
+                                disabled={config.lives <= 1}
+                            >
+                                -
+                            </button>
+                            <span className="config-value">{config.lives}</span>
+                            <button 
+                                className="config-button"
+                                onClick={() => handleConfigChange('lives', config.lives + 1)}
+                                disabled={config.lives >= 5}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div className="config-item">
+                        <label>TIEMPO (seg):</label>
+                        <div className="config-controls">
+                            <button 
+                                className="config-button"
+                                onClick={() => handleConfigChange('duration', Math.max(60, config.duration - 30))}
+                                disabled={config.duration <= 60}
+                            >
+                                -
+                            </button>
+                            <span className="config-value">{config.duration}</span>
+                            <button 
+                                className="config-button"
+                                onClick={() => handleConfigChange('duration', config.duration + 30)}
+                                disabled={config.duration >= 300}
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             <div className="players-list">
                 {players.map((player) => (

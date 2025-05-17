@@ -101,6 +101,7 @@ const GamePage: React.FC = () => {
   const { subscribe, isConnected, sendMessage } = useWebSocket();
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
+  const { initialGameData } = location.state || {};
 
   const [gameState, setGameState] = useState<GameMessage | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
@@ -108,9 +109,11 @@ const GamePage: React.FC = () => {
   const [bombs, setBombs] = useState<Bomb[]>([]);
   const [explosions, setExplosions] = useState<Explosion[]>([]);
   const [localPowerUps, setLocalPowerUps] = useState<{x: number, y: number, type: 'BOMB' | 'FIRE' | 'SPEED'}[]>([]);
-  const [timeLeft, setTimeLeft] = useState<number>(300);
+  const [timeLeft, setTimeLeft] = useState<number>(
+    initialGameData?.config?.duration || 180 // 180 como valor por defecto
+  );
   const [playerLives, setPlayerLives] = useState<number>(3);
-  const [gameActive, setGameActive] = useState<boolean>(false);
+  const [gameActive, setGameActive] = useState<boolean>(true);
 
   const defaultMap = useMemo<GameMap>(() => ({
     width: 15,
@@ -187,6 +190,24 @@ const GamePage: React.FC = () => {
     };
   }, [gameLoop]);
 
+    useEffect(() => {
+  if (!gameActive) return;
+
+  const timer = setInterval(() => {
+    setTimeLeft(prev => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        console.log('¡Tiempo terminado!');
+        // Aquí tu lógica para finalizar el juego
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [gameActive]);
+
   useEffect(() => {
     console.log('Inicializando juego...');
     console.log('Datos de location.state:', location.state);
@@ -199,6 +220,8 @@ const GamePage: React.FC = () => {
         config: location.state.initialGameData.config || defaultConfig
       });
     }
+
+  
 
     const playerId = location.state?.playerId || localStorage.getItem('bomberman-playerId');
     if (playerId) {
@@ -444,7 +467,7 @@ const GamePage: React.FC = () => {
     <div className="game-container" ref={gameContainerRef} tabIndex={0}>
       <div className="game-header">
         <HUD
-          initialTime={timeLeft}
+          time={timeLeft}
           roomCode={roomCode || ''}
           lives={playerLives}
           isRunning={true}
