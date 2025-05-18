@@ -1,0 +1,41 @@
+/* Estilos globales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body, html {
+    height: 100%;
+    font-family: "Press Start 2P", cursive; /* Fuente retro */
+    background-image: url("./images/f1.png"); /* Fondo de la imagen */
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Evita scroll si la imagen es más grande */
+  }
+  
+  /* Contenedor de la página de inicio */
+  .homepage-container {
+    background-size: 100% 100%; /* Hace que la imagen cubra todo */
+    background-position: center;
+    background-repeat: no-repeat;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+
+/* Contenedor del botón */
+.button-container {
+    position: absolute; /* Para que flote sobre la imagen de fondo */
+    bottom: 3%; /* Más cerca del borde inferior */
+    left: 50%;
+    transform: translateX(-50%); /* Centra el botón */
+}
+
+  
