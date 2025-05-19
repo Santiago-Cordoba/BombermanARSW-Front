@@ -16,18 +16,22 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Necesario para análisis preciso de SonarCloud
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
+      # Cambia al directorio del frontend (según tu estructura)
+      - name: Navigate to frontend directory
+        run: cd my-app  # Ajusta esto si tu frontend está en otra carpeta
+
       - name: Install dependencies
         run: npm install
 
       - name: Run tests with coverage
-        run: npm test -- --coverage  # Asegúrate que genere lcov.info
+        run: npm test -- --coverage
 
       - name: SonarCloud Scan
         env:
@@ -38,13 +42,13 @@ jobs:
             -Dsonar.organization=santiago-cordoba \
             -Dsonar.branch.name=develop \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.sources=./my-app/src  # Ajusta según tu estructura
+            -Dsonar.sources=src  # Ajusta según tu estructura
 
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    needs: sonarcloud_analysis  # Espera a que termine el análisis
+    needs: sonarcloud_analysis
     permissions:
       id-token: write
       contents: read
@@ -69,7 +73,7 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_NICE_MEADOW_00C62F90F }}
           action: "upload"
-          app_location: "./my-app"
+          app_location: "./my-app"  # Asegúrate que coincida con tu estructura
           output_location: "dist"
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
