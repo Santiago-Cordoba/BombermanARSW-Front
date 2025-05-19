@@ -2,17 +2,18 @@ name: Azure Static Web Apps CI/CD with SonarCloud
 
 on:
   push:
-    branches:
-      - develop
+    branches: [develop]
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    branches:
-      - develop
+    branches: [develop]
 
 jobs:
   sonarcloud_analysis:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: './my-app'  # ¡CAMBIAR ESTO por tu ruta real!
     steps:
       - uses: actions/checkout@v3
         with:
@@ -22,10 +23,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '20'
-
-      # Cambia al directorio del frontend (según tu estructura)
-      - name: Navigate to frontend directory
-        run: cd my-app  # Ajusta esto si tu frontend está en otra carpeta
 
       - name: Install dependencies
         run: npm install
@@ -42,7 +39,7 @@ jobs:
             -Dsonar.organization=santiago-cordoba \
             -Dsonar.branch.name=develop \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.sources=src  # Ajusta según tu estructura
+            -Dsonar.sources=src
 
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
