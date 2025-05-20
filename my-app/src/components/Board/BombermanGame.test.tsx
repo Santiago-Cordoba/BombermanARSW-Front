@@ -7,7 +7,7 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi } from 'vitest';
 
-// Mock useWebSocket
+// Mock useWebSocket before importing the component
 const mockSubscribe = vi.fn();
 const mockContext = {
   isConnected: false,
@@ -17,12 +17,11 @@ const mockContext = {
   disconnect: vi.fn(),
   stompClient: null,
 };
-vi.mock('../Socket/WebSocketProvider', () => ({
+vi.mock('../../components/Socket/WebSocketProvider', () => ({
   useWebSocket: () => mockContext,
 }));
 
-import BombermanGame from './Board';
-import { GameInfo, GameMapDisplay } from './Board';
+import BombermanGame, { GameInfo, GameMapDisplay } from './Board';
 
 // Fake game message
 const fakeMessage = {
@@ -33,8 +32,14 @@ const fakeMessage = {
     width: 2,
     height: 2,
     cells: [
-      [ { x:0,y:0,isWall:false,isDestructible:false,hasPowerUp:false }, { x:1,y:0,isWall:false,isDestructible:false,hasPowerUp:false } ],
-      [ { x:0,y:1,isWall:false,isDestructible:false,hasPowerUp:false }, { x:1,y:1,isWall:false,isDestructible:false,hasPowerUp:false } ],
+      [
+        { x: 0, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+        { x: 1, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+      ],
+      [
+        { x: 0, y: 1, isWall: false, isDestructible: false, hasPowerUp: false },
+        { x: 1, y: 1, isWall: false, isDestructible: false, hasPowerUp: false },
+      ],
     ],
   },
 };
@@ -47,21 +52,44 @@ describe('BombermanGame component', () => {
   });
 
   it('Test 24 – recibe mensaje GAME_START y muestra GameInfo y GameMapDisplay', () => {
-    // Arrange: isConnected true and subscribe invokes callback immediately
     mockContext.isConnected = true;
-    mockSubscribe.mockImplementation((dest, cb) => {
+    mockSubscribe.mockImplementation((_dest, cb) => {
       cb(fakeMessage);
       return { unsubscribe: () => {} };
     });
 
     render(<BombermanGame roomCode="ROOM1" />);
 
-    // After effect, GameInfo should render
-    expect(screen.getByText(/Tiempo: 1:30/)).toBeInTheDocument();
-    expect(screen.getByText(/Vidas: 2/)).toBeInTheDocument();
-    // GameMapDisplay cells
-    const cells = screen.getAllByTestId('board-cell');
-    expect(cells).toHaveLength(4);
+    expect(screen.getByText('Tiempo: 1:30')).toBeInTheDocument();
+    expect(screen.getByText('Vidas: 2')).toBeInTheDocument();
+    expect(screen.getAllByTestId('board-cell')).toHaveLength(4);
     console.log('✅ Test 24 BombermanGame game start handling');
+  });
+
+  it('Test 25 – maneja GAME_UPDATE y actualiza GameInfo', () => {
+    const updateMsg = { ...fakeMessage, type: 'GAME_UPDATE', config: { duration: 120, lives: 3 } };
+    mockContext.isConnected = true;
+    mockSubscribe.mockImplementation((_dest, cb) => {
+      cb(fakeMessage);
+      cb(updateMsg);
+      return { unsubscribe: () => {} };
+    });
+
+    render(<BombermanGame roomCode="ROOM1" />);
+
+    expect(screen.getByText('Tiempo: 2:00')).toBeInTheDocument();
+    expect(screen.getByText('Vidas: 3')).toBeInTheDocument();
+    console.log('✅ Test 25 BombermanGame GAME_UPDATE handling');
+  });
+
+  it('Test 26 – limpia suscripción al desmontar', () => {
+    const unsubMock = vi.fn();
+    mockContext.isConnected = true;
+    mockSubscribe.mockReturnValue({ unsubscribe: unsubMock });
+
+    const { unmount } = render(<BombermanGame roomCode="ROOM1" />);
+    unmount();
+    expect(unsubMock).toHaveBeenCalled();
+    console.log('✅ Test 26 BombermanGame unsubscribe on unmount');
   });
 });
