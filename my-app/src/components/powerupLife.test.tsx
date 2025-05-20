@@ -1,3 +1,4 @@
+// src/components/powerupLife.test.tsx
 /**
  * @vitest-environment happy-dom
  */
@@ -46,7 +47,6 @@ describe("PowerUpManager", () => {
   let onCollectMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    // Forzamos siempre la misma posición: (1,1)
     vi.spyOn(Math, "random").mockReturnValue(0);
     onCollectMock = vi.fn();
   });
@@ -59,7 +59,7 @@ describe("PowerUpManager", () => {
     render(
       <PowerUpManager
         boardSize={boardSize}
-        playerPosition={{ row: 0, col: 0 }}  // distinto para NO disparar onCollect
+        playerPosition={{ row: 0, col: 0 }}
         maxLives={3}
         currentLives={2}
         onCollect={onCollectMock}
@@ -102,5 +102,35 @@ describe("PowerUpManager", () => {
 
     expect(onCollectMock).toHaveBeenCalled();
     console.log("✅ Test 11 PowerUpManager onCollect");
+  });
+
+  it("Test 12 – desaparece el power-up si no se recoge tras 10 s de aparecer", () => {
+    render(
+      <PowerUpManager
+        boardSize={boardSize}
+        playerPosition={{ row: 0, col: 0 }}
+        maxLives={3}
+        currentLives={2}
+        onCollect={onCollectMock}
+        gameMap={gameMap}
+      >
+        {(renderPowerUp) => (
+          <div data-testid="cell-disappear">{renderPowerUp(1, 1)}</div>
+        )}
+      </PowerUpManager>
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(15_000);
+    });
+    let cell = screen.getByTestId("cell-disappear");
+    expect(cell.querySelector(".game-cell.powerup.life")).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+    cell = screen.getByTestId("cell-disappear");
+    expect(cell.querySelector(".game-cell.powerup.life")).toBeNull();
+    console.log("✅ Test 12 PowerUpManager disappear after timeout");
   });
 });
