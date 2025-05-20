@@ -136,7 +136,7 @@ const CellComponent: React.FC<{ cell: GameCell; player?: Player }> = ({ cell, pl
   const playerColor = player?.name === '1' ? 'player-1' : 'player-2';
 
   return (
-    <div className={`cell ${cellType}`}>
+      <div data-testid="board-cell" className={`cell ${cellType}`}>
       {player && <div className={`player-indicator ${playerColor}`} />}
       {cell.hasPowerUp && !player && (
         <div className="power-up-indicator">
