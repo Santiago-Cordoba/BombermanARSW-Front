@@ -80,7 +80,7 @@ const BombermanGame: React.FC<BombermanGameProps> = ({ roomCode }) => {
 };
 
 // Componente de información del juego
-const GameInfo: React.FC<{ config: GameConfig; playerCount: number }> = ({ config, playerCount }) => {
+export const GameInfo: React.FC<{ config: GameConfig; playerCount: number }> = ({ config, playerCount }) => {
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -97,7 +97,7 @@ const GameInfo: React.FC<{ config: GameConfig; playerCount: number }> = ({ confi
 };
 
 // Componente del mapa del juego
-const GameMapDisplay: React.FC<{ map: GameMap; players: Player[] }> = ({ map, players }) => {
+export const GameMapDisplay: React.FC<{ map: GameMap; players: Player[] }> = ({ map, players }) => {
   return (
     <div 
       className="map-container"
@@ -124,7 +124,7 @@ const GameMapDisplay: React.FC<{ map: GameMap; players: Player[] }> = ({ map, pl
 // Componente de celda individual
 type CellType = 'empty' | 'wall' | 'destructible';
 
-const CellComponent: React.FC<{ cell: GameCell; player?: Player }> = ({ cell, player }) => {
+export const CellComponent: React.FC<{ cell: GameCell; player?: Player }> = ({ cell, player }) => {
   const getCellType = (): CellType => {
     if (cell.isWall) {
       return cell.isDestructible ? 'destructible' : 'wall';
