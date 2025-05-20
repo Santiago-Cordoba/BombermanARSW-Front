@@ -6,7 +6,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect } from 'vitest';
-import { GameInfo, CellComponent } from './Board';
+import { GameInfo, CellComponent, GameMapDisplay } from './Board';
 
 // Test 19: GameInfo
 // Verifica formateo de tiempo y despliegue de vidas y jugadores
@@ -28,6 +28,7 @@ describe('GameInfo component', () => {
 
 // Test 20: CellComponent
 // Verifica clases y contenido según props
+
 describe('CellComponent', () => {
   it('Test 20a – celda vacía sin jugador ni power-up', () => {
     const cell = { x: 0, y: 0, isWall: false, isDestructible: false, hasPowerUp: false };
@@ -80,5 +81,69 @@ describe('CellComponent', () => {
     const pu = div.querySelector('.power-up-indicator');
     expect(pu).toHaveTextContent('✨');
     console.log('✅ Test 20f CellComponent generic power-up');
+  });
+});
+
+// Test 21 & 22: GameMapDisplay
+// Test 21: básico sin jugadores ni power-ups
+// Test 22: con jugador y power-up invincibility
+describe('GameMapDisplay component', () => {
+  it('Test 21 – renderiza 4 celdas y grid-template correcto', () => {
+    const map = {
+      width: 2,
+      height: 2,
+      cells: [
+        [
+          { x: 0, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+          { x: 1, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+        ],
+        [
+          { x: 0, y: 1, isWall: false, isDestructible: false, hasPowerUp: false },
+          { x: 1, y: 1, isWall: false, isDestructible: false, hasPowerUp: false },
+        ],
+      ],
+    };
+    const players: any[] = [];
+
+    const { container } = render(
+      <GameMapDisplay map={map as any} players={players} />
+    );
+
+    expect(screen.getAllByTestId('board-cell')).toHaveLength(4);
+    const grid = container.querySelector('.map-container');
+    expect(grid).toHaveStyle('grid-template-columns: repeat(2, 32px)');
+    expect(grid).toHaveStyle('grid-template-rows: repeat(2, 32px)');
+    console.log('✅ Test 21 GameMapDisplay basic render');
+  });
+
+  it('Test 22 – muestra indicador de jugador y power-up en celdas correctas', () => {
+    const map = {
+      width: 2,
+      height: 2,
+      cells: [
+        [
+          { x: 0, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+          { x: 1, y: 0, isWall: false, isDestructible: false, hasPowerUp: false },
+        ],
+        [
+          { x: 0, y: 1, isWall: false, isDestructible: false, hasPowerUp: false },
+          { x: 1, y: 1, isWall: false, isDestructible: false, hasPowerUp: true, powerUpType: 'INVINCIBILITY' },
+        ],
+      ],
+    };
+    const players = [{ id: 'p1', name: '1', x: 0, y: 0 }];
+
+    render(<GameMapDisplay map={map as any} players={players} />);
+    const cells = screen.getAllByTestId('board-cell');
+
+    // Celda 0 = (0,0)
+    const cell00 = cells[0];
+    expect(cell00.querySelector('.player-indicator.player-1')).toBeInTheDocument();
+
+    // Celda 3 = (1,1)
+    const cell11 = cells[3];
+    expect(cell11.querySelector('.power-up-indicator')).toHaveTextContent('🛡️');
+
+    console.log('✅ Test 22 GameMapDisplay player and power-up');
   });
 });
