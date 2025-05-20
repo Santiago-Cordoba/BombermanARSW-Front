@@ -4,6 +4,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+
 // Mock de useNavigate de react-router-dom
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
