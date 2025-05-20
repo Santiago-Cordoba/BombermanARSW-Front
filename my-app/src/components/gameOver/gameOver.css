@@ -1,42 +1,155 @@
+/* GameOver.css */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
 .game-over-card-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: rgba(0, 0, 0, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-  }
-  
-  .game-over-card {
-    background-color: #2c3e50;
-    padding: 2rem;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.game-over-card {
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 8px solid #ffeb3b;
     border-radius: 10px;
+    padding: 40px;
+    width: 90%;
+    max-width: 500px;
+    color: #fff;
     text-align: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    color: white;
-    max-width: 80%;
-  }
-  
-  .game-over-card h2 {
-    margin-top: 0;
-    color: #f1c40f;
-  }
-  
-  .game-over-button {
-    background-color: #e74c3c;
+    box-shadow: 0 0 30px #ffeb3b;
+    position: relative;
+    animation: flicker 3s infinite alternate;
+}
+
+@keyframes flicker {
+    0% { box-shadow: 0 0 30px #ff5722; }
+    100% { box-shadow: 0 0 40px #4caf50, 0 0 60px #2196f3; }
+}
+
+.game-over-title {
+    color: #ffeb3b;
+    font-size: 2rem;
+    margin-bottom: 30px;
+    text-shadow: 4px 4px 0 #ff5722;
+    letter-spacing: 2px;
+}
+
+.game-over-message {
+    color: #ffffff;
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    line-height: 1.5;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.pixel-divider {
+    height: 4px;
+    background: linear-gradient(to right, 
+        #ff5722, #ffeb3b, #ff5722, #ffeb3b);
+    margin: 30px 0;
+    position: relative;
+}
+
+.pixel-divider::after {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(to right, 
+        transparent, transparent 3px, 
+        rgba(0,0,0,0.7) 3px, rgba(0,0,0,0.7) 6px);
+}
+
+.game-over-button {
+    background-color: #2196f3;
     color: white;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    cursor: pointer;
+    border-radius: 0px;
+    padding: 15px 30px;
+    font-family: 'Press Start 2P', cursive;
     font-size: 1rem;
-    margin-top: 1rem;
-  }
-  
-  .game-over-button:hover {
-    background-color: #c0392b;
-  }
+    cursor: pointer;
+    transition: all 0.3s;
+    margin: 20px auto 0;
+    text-transform: uppercase;
+    box-shadow: 0 5px 0 #0d8bf2;
+    width: 80%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.game-over-button:hover {
+    background-color: #0d8bf2;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 0 #0b7ad1;
+}
+
+.game-over-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 3px 0 #0b7ad1;
+}
+
+.explosion-icon {
+    font-size: 3rem;
+    margin: 20px 0;
+    color: #ff5722;
+    text-shadow: 0 0 10px #ffeb3b;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.2); }
+}
+
+.corner-pixel {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background-color: #ffeb3b;
+}
+
+.corner-pixel.tl { top: -8px; left: -8px; }
+.corner-pixel.tr { top: -8px; right: -8px; }
+.corner-pixel.bl { bottom: -8px; left: -8px; }
+.corner-pixel.br { bottom: -8px; right: -8px; }
+
+.tie-players {
+  margin: 20px 0;
+  color: #ffeb3b;
+  text-shadow: 2px 2px 0 #ff5722;
+}
+
+.tie-players h3 {
+  font-size: 1rem;
+  margin-bottom: 15px;
+}
+
+.tie-players ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tie-players li {
+  font-size: 0.9rem;
+  margin: 8px 0;
+  padding: 5px;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.tie-players .current-player {
+  color: #2196f3;
+  font-weight: bold;
+}

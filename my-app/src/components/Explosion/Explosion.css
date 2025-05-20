@@ -1,15 +1,97 @@
 /* Explosion.css */
-.explosion {
-  width: 100%;
-  height: 100%;
-  background-color: #ff5722;
-  opacity: 0.8;
-  border-radius: 50%;
-  animation: explode 0.5s ease-out;
+.explosion-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
 }
 
-@keyframes explode {
+.explosion-center {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle, 
+    rgba(255, 100, 50, 0.9) 0%, 
+    rgba(255, 50, 0, 0.7) 70%, 
+    transparent 100%);
+  box-shadow: 
+    0 0 15px 5px rgba(255, 80, 0, 0.8),
+    0 0 30px 15px rgba(255, 40, 0, 0.4);
+  animation: explode-core 0.5s ease-out forwards;
+}
+
+.explosion-arm {
+  position: absolute;
+  animation: explode-arm 0.5s ease-out forwards;
+}
+
+.explosion-arm.up {
+  width: 32px;
+  height: calc(100% + 32px);
+  background: linear-gradient(to top, 
+    rgba(255, 150, 50, 0.8) 0%, 
+    rgba(255, 80, 0, 0.6) 30%, 
+    transparent 100%);
+  transform-origin: bottom center;
+}
+
+.explosion-arm.down {
+  width: 32px;
+  height: calc(100% + 32px);
+  background: linear-gradient(to bottom, 
+    rgba(255, 150, 50, 0.8) 0%, 
+    rgba(255, 80, 0, 0.6) 30%, 
+    transparent 100%);
+  transform-origin: top center;
+}
+
+.explosion-arm.left {
+  width: calc(100% + 32px);
+  height: 32px;
+  background: linear-gradient(to left, 
+    rgba(255, 150, 50, 0.8) 0%, 
+    rgba(255, 80, 0, 0.6) 30%, 
+    transparent 100%);
+  transform-origin: center right;
+}
+
+.explosion-arm.right {
+  width: calc(100% + 32px);
+  height: 32px;
+  background: linear-gradient(to right, 
+    rgba(255, 150, 50, 0.8) 0%, 
+    rgba(255, 80, 0, 0.6) 30%, 
+    transparent 100%);
+  transform-origin: center left;
+}
+
+@keyframes explode-core {
   0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 0.8; }
+  20% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes explode-arm {
+  0% { transform: scaleX(0.1) scaleY(0.3); opacity: 0; }
+  30% { transform: scaleX(1.1) scaleY(1); opacity: 1; }
+  100% { transform: scaleX(1) scaleY(1); opacity: 0; }
+}
+
+.fire-trail {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  background: radial-gradient(circle, 
+    rgba(255, 100, 50, 0.6) 0%, 
+    rgba(255, 50, 0, 0.3) 70%, 
+    transparent 100%);
+  box-shadow: 0 0 10px 5px rgba(255, 60, 0, 0.3);
+  z-index: 5;
+  animation: fire-flicker 1s ease-out forwards;
+}
+
+@keyframes fire-flicker {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(0.95); }
 }
