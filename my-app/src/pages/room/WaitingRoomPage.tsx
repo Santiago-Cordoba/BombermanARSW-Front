@@ -16,7 +16,7 @@ interface Player {
 
 interface GameConfig {
     duration?: number;
-    players?: number;
+    players?: number; 
     lives?: number;
 }
 
