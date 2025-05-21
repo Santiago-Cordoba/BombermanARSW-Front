@@ -11,9 +11,13 @@ export default defineConfig({
     },
   },
   test: {
-    globals: true,                 // permite usar describe/it sin importarlos
-    environment: 'happy-dom',      // utiliza happy-dom para el DOM en tests
-    setupFiles: './src/setupTests.ts', // jest-dom matchers
-    css: true,                     // soporta importación de CSS en tests
+    environment: 'jsdom',
+    globals: true,
+    coverage: {
+      provider: 'v8', // también puedes usar 'istanbul'
+      reporter: ['text', 'lcov'],
+      all: true,
+      include: ['src/**/*.{ts,tsx}'],
+    },
   },
 })
