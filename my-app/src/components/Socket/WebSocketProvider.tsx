@@ -54,7 +54,7 @@ export const WebSocketProvider: React.FC<{children: React.ReactNode}> = ({ child
 
       const roomExists = await checkRoomExists(roomCode);
       const client = new Client({
-        brokerURL: 'wss://bombermanarsw.canadacentral.cloudapp.azure.com/ws',
+        brokerURL: 'wss://sirve.canadacentral.cloudapp.azure.com/ws',
         reconnectDelay: 5000,
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
