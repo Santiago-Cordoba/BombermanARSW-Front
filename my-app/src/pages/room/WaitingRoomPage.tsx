@@ -94,6 +94,7 @@ const WaitingRoomPage: React.FC = () => {
                             setPlayers(message.players);
                             const currentPlayer = message.players.find(p => p.name === playerName);
                             setIsHost(currentPlayer?.host || false);
+                            console.log('Jugadores actualizados:', message.players);
                             break;
                         }
                             

@@ -1,104 +1,58 @@
-import React, { JSX, useEffect, useState } from 'react';
+import React from 'react';
 import './Explosion.css';
 
-interface ExplosionProps {
+type ExplosionProps = {
   x: number;
   y: number;
   range: number;
-  onComplete?: () => void;
-}
+};
 
-const Explosion: React.FC<ExplosionProps> = ({ x, y, range, onComplete }) => {
-  const [explosionParts, setExplosionParts] = useState<JSX.Element[]>([]);
-
-  useEffect(() => {
-    const parts = [];
-    
-    // Centro de la explosión
-    parts.push(
-      <div
-        key="center"
-        className="explosion-center"
+const Explosion: React.FC<ExplosionProps> = ({ x, y, range }) => {
+  return (
+    <>
+      <div 
+        className="explosion explosion-center"
         style={{
-          left: `${x * 32}px`,
-          top: `${y * 32}px`,
+          gridColumn: x + 1,
+          gridRow: y + 1,
         }}
       />
-    );
-
-    // Brazos de explosión
-    for (let i = 1; i <= range; i++) {
-      // Derecha
-      if (x + i < 15) { // Asumiendo ancho de mapa 15
-        parts.push(
-          <div
-            key={`right-${i}`}
-            className="explosion-arm right"
+      
+      {/* Brazos de la explosión */}
+      {[...Array(range).keys()].map(i => (
+        <React.Fragment key={`explosion-${x}-${y}-${i}`}>
+          <div 
+            className="explosion explosion-arm"
             style={{
-              left: `${x * 32}px`,
-              top: `${y * 32}px`,
-              width: `${i * 32}px`
+              gridColumn: x - i > 0 ? x - i + 1 : x + 1,
+              gridRow: y + 1,
             }}
           />
-        );
-      }
-
-      // Izquierda
-      if (x - i >= 0) {
-        parts.push(
-          <div
-            key={`left-${i}`}
-            className="explosion-arm left"
+          <div 
+            className="explosion explosion-arm"
             style={{
-              left: `${(x - i) * 32}px`,
-              top: `${y * 32}px`,
-              width: `${i * 32}px`
+              gridColumn: x + i + 1,
+              gridRow: y + 1,
             }}
           />
-        );
-      }
-
-      // Abajo
-      if (y + i < 13) { // Asumiendo alto de mapa 13
-        parts.push(
-          <div
-            key={`down-${i}`}
-            className="explosion-arm down"
+          <div 
+            className="explosion explosion-arm"
             style={{
-              left: `${x * 32}px`,
-              top: `${y * 32}px`,
-              height: `${i * 32}px`
+              gridColumn: x + 1,
+              gridRow: y - i > 0 ? y - i + 1 : y + 1,
             }}
           />
-        );
-      }
-
-      // Arriba
-      if (y - i >= 0) {
-        parts.push(
-          <div
-            key={`up-${i}`}
-            className="explosion-arm up"
+          <div 
+            className="explosion explosion-arm"
             style={{
-              left: `${x * 32}px`,
-              top: `${(y - i) * 32}px`,
-              height: `${i * 32}px`
+              gridColumn: x + 1,
+              gridRow: y + i + 1,
             }}
           />
-        );
-      }
-    }
-
-    setExplosionParts(parts);
-
-    const timer = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [x, y, range, onComplete]);
-
-  return <div className="explosion-container">{explosionParts}</div>;
+        </React.Fragment>
+      ))}
+    </>
+  );
 };
 
 export default Explosion;

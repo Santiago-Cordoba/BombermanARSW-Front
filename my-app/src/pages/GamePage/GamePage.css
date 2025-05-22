@@ -219,3 +219,23 @@
   color: white;
   font-family: 'Arial', sans-serif;
 }
+
+.explosion {
+  position: relative;
+  z-index: 5;
+  animation: explosion-animation 0.5s ease-out;
+}
+
+@keyframes explosion-animation {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+.explosion-center {
+  background-color: #ff5722;
+}
+
+.explosion-arm {
+  background-color: #ff9800;
+}
