@@ -36,7 +36,7 @@ type Player = {
   bombCapacity: number;
   maxBombs: number;
   bombRange: number;
-  lives: number;
+  lives:number;
 };
 
 export type GameCell = {
@@ -55,6 +55,13 @@ type Bomb = {
   range: number;
   timer: number;
   playerId: string;
+};
+
+type Explosion = {
+  x: number;
+  y: number;
+  timer: number;
+  isCenter?: boolean;
 };
 
 type GameMap = {
@@ -81,11 +88,6 @@ type GameMessage = {
     x: number;
     y: number;
   }[];
-  x?: number;
-  y?: number;
-  range?: number;
-  affectedPlayers?: string[];
-  destroyedWalls?: {x: number, y: number}[];
 };
 
 type PlayerMoveRequest = {
@@ -102,14 +104,23 @@ const GamePage: React.FC = () => {
   const gameContainerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const { initialGameData } = location.state || {};
-  const [gameResult, setGameResult] = useState<{show: boolean; message: string; players?: {name: string, isCurrentPlayer: boolean}[]}>({show: false, message: ''});
-  const [activeExplosions, setActiveExplosions] = useState<Array<{x: number; y: number; range: number; id: string}>>([]);
+  const [gameResult, setGameResult] = useState<{show: boolean;message: string;players?: {name: string, isCurrentPlayer: boolean}[]; }>({show: false, message: ''});
+  const [activeExplosions, setActiveExplosions] = useState<Array<{
+  x: number;
+  y: number;
+  range: number;
+  id: string;
+  }>>([]);
+
   const [gameState, setGameState] = useState<GameMessage | null>(null);
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [bombs, setBombs] = useState<Bomb[]>([]);
+  const [explosions, setExplosions] = useState<Explosion[]>([]);
   const [localPowerUps, setLocalPowerUps] = useState<{x: number, y: number, type: 'BOMB' | 'FIRE' | 'SPEED'}[]>([]);
-  const [timeLeft, setTimeLeft] = useState<number>(initialGameData?.config?.duration || 180);
+  const [timeLeft, setTimeLeft] = useState<number>(
+    initialGameData?.config?.duration || 180 // 180 como valor por defecto
+  );
   const [playerLives, setPlayerLives] = useState<number>(3);
   const [gameActive, setGameActive] = useState<boolean>(true);
 
@@ -153,15 +164,40 @@ const GamePage: React.FC = () => {
         bomb.timer <= 0 && !updatedBombs.some(b => b.id === bomb.id)
       );
 
-      explodedBombs.forEach(bomb => {
-        handleExplosion(bomb.x, bomb.y, bomb.range);
-      });
+      if (explodedBombs.length > 0) {
+        const newExplosions: Explosion[] = [];
+        
+        explodedBombs.forEach(bomb => {
+          newExplosions.push({ 
+            x: bomb.x, 
+            y: bomb.y, 
+            timer: 1,
+            isCenter: true 
+          });
+          
+          for (let i = 1; i <= bomb.range; i++) {
+            if (bomb.y - i >= 0) newExplosions.push({ x: bomb.x, y: bomb.y - i, timer: 1, isCenter: false });
+            if (bomb.y + i < defaultMap.height) newExplosions.push({ x: bomb.x, y: bomb.y + i, timer: 1, isCenter: false });
+            if (bomb.x - i >= 0) newExplosions.push({ x: bomb.x - i, y: bomb.y, timer: 1, isCenter: false });
+            if (bomb.x + i < defaultMap.width) newExplosions.push({ x: bomb.x + i, y: bomb.y, timer: 1, isCenter: false });
+          }
+        });
+
+        setExplosions(prev => [...prev, ...newExplosions]);
+      }
 
       return updatedBombs;
     });
 
+    setExplosions(prev => 
+      prev.map(exp => ({
+        ...exp,
+        timer: exp.timer > 0 ? exp.timer - 0.016 : 0
+      })).filter(exp => exp.timer > 0)
+    );
+
     animationRef.current = requestAnimationFrame(gameLoop);
-  }, []);
+  }, [defaultMap]);
 
   useEffect(() => {
     animationRef.current = requestAnimationFrame(gameLoop);
@@ -172,33 +208,36 @@ const GamePage: React.FC = () => {
     };
   }, [gameLoop]);
 
-  useEffect(() => {
-    if (!gameActive) return;
+    useEffect(() => {
+  if (!gameActive) return;
 
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          const activePlayers = gameState?.players?.filter(p => p.lives > 0) || [];
-          if (activePlayers.length > 1) {
-            setGameResult({
-              show: true,
-              message: '¡EMPATE POR TIEMPO!',
-              players: activePlayers.map(p => ({
-                name: p.name,
-                isCurrentPlayer: p.id === currentPlayerId
-              }))
-            });
-            setGameActive(false);
-          }
-          return 0;
+  const timer = setInterval(() => {
+    setTimeLeft(prev => {
+      if (prev <= 1) {
+        clearInterval(timer);
+        
+        // Validar empate al acabarse el tiempo
+        const activePlayers = gameState?.players?.filter(p => p.lives > 0) || [];
+        if (activePlayers.length > 1) {
+          setGameResult({
+            show: true,
+            message: '¡EMPATE POR TIEMPO!',
+            players: activePlayers.map(p => ({
+              name: p.name,
+              isCurrentPlayer: p.id === currentPlayerId
+            }))
+          });
+          setGameActive(false);
         }
-        return prev - 1;
-      });
-    }, 1000);
+        
+        return 0;
+      }
+      return prev - 1;
+    });
+  }, 1000);
 
-    return () => clearInterval(timer);
-  }, [gameActive, gameState?.players, currentPlayerId]);
+  return () => clearInterval(timer);
+}, [gameActive, gameState?.players, currentPlayerId]);
 
   useEffect(() => {
     console.log('Inicializando juego...');
@@ -212,6 +251,8 @@ const GamePage: React.FC = () => {
         config: location.state.initialGameData.config || defaultConfig
       });
     }
+
+  
 
     const playerId = location.state?.playerId || localStorage.getItem('bomberman-playerId');
     if (playerId) {
@@ -383,6 +424,7 @@ const GamePage: React.FC = () => {
           setGameActive(true);
         } 
         else if (message.type === 'GAME_UPDATE') {
+          // Actualizar bombas - importante mantener las bombas existentes
           setBombs(prevBombs => {
             const newBombs = message.bombs?.map(b => ({
               id: b.id || `bomb-${b.x}-${b.y}-${Date.now()}`,
@@ -401,6 +443,7 @@ const GamePage: React.FC = () => {
               })));
             }
                       
+            // Combinar bombas nuevas con existentes, evitando duplicados
             return [
               ...prevBombs.filter(pb => 
                 !newBombs.some(nb => nb.x === pb.x && nb.y === pb.y)
@@ -422,6 +465,7 @@ const GamePage: React.FC = () => {
               });
               setGameActive(false);
             }
+
            else if (timeLeft <= 0 && activePlayers.length > 1 && gameActive) {
             setGameResult({
               show: true,
@@ -433,11 +477,12 @@ const GamePage: React.FC = () => {
             });
             setGameActive(false);
           }
-          
+          // Actualizar tiempo y vidas
           if (message.config) {
             setTimeLeft(message.config.duration);
           }
           
+          // Actualizar vidas del jugador actual
           if (currentPlayerId) {
             const currentPlayer = message.players?.find(p => p.id === currentPlayerId);
             if (currentPlayer) {
@@ -445,50 +490,20 @@ const GamePage: React.FC = () => {
             }
           }
 
-          setGameState(prev => ({
-            ...prev,
-            players: message.players || prev?.players || [],
-            config: message.config || prev?.config || defaultConfig,
-            type: 'GAME_UPDATE'
-          }));
-        }
-        else if (message.type === 'EXPLOSION') {
-          if (message.x !== undefined && message.y !== undefined && message.range !== undefined) {
-            handleExplosion(message.x, message.y, message.range);
+          setGameState(prev => {
+            const newState = {
+              ...prev,
+              players: message.players || prev?.players || [],
+              config: message.config || prev?.config || defaultConfig,
+              type: 'GAME_UPDATE'
+            };
             
-            setGameState(prev => {
-              if (!prev) return null;
-              
-              const updatedBombs = prev.bombs?.filter(b => 
-                !(b.x === message.x && b.y === message.y)
-              ) || [];
-              
-              const updatedPlayers = prev.players.map(p => {
-                if (message.affectedPlayers?.includes(p.id)) {
-                  return { ...p, lives: p.lives - 1 };
-                }
-                return p;
-              }).filter(p => p.lives > 0);
-              
-              const updatedCells = [...prev.map.cells];
-              message.destroyedWalls?.forEach(({x, y}) => {
-                if (updatedCells[y]?.[x]) {
-                  updatedCells[y][x].isWall = false;
-                  updatedCells[y][x].isDestructible = false;
-                }
-              });
-              
-              return {
-                ...prev,
-                bombs: updatedBombs,
-                players: updatedPlayers,
-                map: {
-                  ...prev.map,
-                  cells: updatedCells
-                }
-              };
-            });
-          }
+
+            if (JSON.stringify(prev) === JSON.stringify(newState)) {
+              return {...newState, _forceUpdate: Date.now()};
+            }
+            return newState;
+          });
         }
       }
     );
@@ -497,39 +512,7 @@ const GamePage: React.FC = () => {
       subscription?.unsubscribe();
       setGameActive(false);
     };
-  }, [isConnected, roomCode, subscribe, loading, defaultMap, defaultConfig, currentPlayerId, gameActive, timeLeft]);
-
-  useEffect(() => {
-    if (!gameState || !currentPlayerId) return;
-
-    const currentPlayer = gameState.players.find(p => p.id === currentPlayerId);
-    if (!currentPlayer) return;
-
-    const isInExplosion = activeExplosions.some(e => 
-      Math.abs(e.x - currentPlayer.x) <= e.range && 
-      Math.abs(e.y - currentPlayer.y) <= e.range
-    );
-
-    if (isInExplosion) {
-      setPlayerLives(prev => {
-        const newLives = prev - 1;
-        if (newLives <= 0) {
-          setGameActive(false);
-          setGameResult({
-            show: true,
-            message: '¡HAS PERDIDO!',
-            players: gameState.players
-              .filter(p => p.lives > 0)
-              .map(p => ({
-                name: p.name,
-                isCurrentPlayer: p.id === currentPlayerId
-              }))
-          });
-        }
-        return newLives;
-      });
-    }
-  }, [activeExplosions, currentPlayerId, gameState]);
+  }, [isConnected, roomCode, subscribe, loading, defaultMap, defaultConfig, currentPlayerId, gameActive]);
 
   if (loading || !gameState || !currentPlayerId) {
     return (
@@ -545,153 +528,149 @@ const GamePage: React.FC = () => {
   const displayConfig = gameState.config || defaultConfig;
 
   return (
-    <div className="game-container" ref={gameContainerRef} tabIndex={0}>
-      <div className="game-header">
-        <HUD
-          time={timeLeft}
-          roomCode={roomCode || ''}
-          lives={playerLives}
-          isRunning={true}
-          onTimeEnd={() => console.log('¡Se acabó el tiempo!')}
-        />
-        {currentPlayer && (
-          <div className="player-stats">
-            <div className="player-bombs">
-              Bombas: {currentPlayer.maxBombs - bombs.filter(b => b.playerId === currentPlayerId).length}/{currentPlayer.maxBombs}
-            </div>
-            <div className="player-range">
-              Rango: {currentPlayer.bombRange}
-            </div>
+  <div className="game-container" ref={gameContainerRef} tabIndex={0}>
+    <div className="game-header">
+      <HUD
+        time={timeLeft}
+        roomCode={roomCode || ''}
+        lives={playerLives}
+        isRunning={true}
+        onTimeEnd={() => console.log('¡Se acabó el tiempo!')}
+      />
+      {currentPlayer && (
+        <div className="player-stats">
+          <div className="player-bombs">
+            Bombas: {currentPlayer.maxBombs - bombs.filter(b => b.playerId === currentPlayerId).length}/{currentPlayer.maxBombs}
           </div>
-        )}
-      </div>
-      
-      <div 
-        className="game-map"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${displayMap.width}, 32px)`,
-          gridTemplateRows: `repeat(${displayMap.height}, 32px)`,
-          gap: '2px',
-          backgroundColor: '#111',
-          padding: '10px',
-          borderRadius: '8px'
-        }}
-      >
-        <PowerUpManager
-          boardSize={displayMap.width}
-          playerPosition={{
-            row: currentPlayer?.y || 0,
-            col: currentPlayer?.x || 0
-          }}
-          maxLives={displayConfig.lives}
-          currentLives={playerLives}
-          onCollect={() => {
-            if (currentPlayerId) {
-              sendMessage(`/app/game/${roomCode}/collectLife`, {
-                playerId: currentPlayerId
-              });
-            }
-          }}
-          gameMap={displayMap.cells}
-        >
-          {(renderPowerUp) => (
-            <>
-              {displayMap.cells.map((row, y) => (
-                <React.Fragment key={`row-${y}`}>
-                  {row.map((cell, x) => {
-                    const cellType = cell?.isWall 
-                      ? cell?.isDestructible ? 'destructible' : 'wall' 
-                      : 'empty';
-                    
-                    const player = gameState.players.find(p => p.x === x && p.y === y);
-                    const bomb = bombs.find(b => b.x === x && b.y === y);
-                    const powerUp = localPowerUps.find(pu => pu.x === x && pu.y === y);
-                    const explosionInCell = activeExplosions.some(e => e.x === x && e.y === y);
-                    
-                    return (
-                      <div 
-                        key={`cell-${x}-${y}`} 
-                        className={`game-cell ${cellType}`}
-                      >
-                        {player && gameState.players.some(p => p.id === player.id) && (
-                          <div className={`game-player player-${player.name} ${
-                            player.id === currentPlayerId ? 'current-player' : ''
-                          }`}>
-                            <img 
-                              src={getPlayerImage(player.name)} 
-                              alt={`Jugador ${player.name}`}
-                              className="player-avatar"
-                            />
-                            {player.id === currentPlayerId && (
-                              <div className="player-indicator"></div>
-                            )}
-                          </div>
-                        )}
-                        
-                        {bomb && !explosionInCell && (
-                          <div className="game-bomb" />
-                        )}
-                        
-                        {powerUp && !bomb && !explosionInCell && (
-                          <div className={`game-power-up ${powerUp.type.toLowerCase()}`}>
-                            {powerUp.type === 'BOMB' && 'B+'}
-                            {powerUp.type === 'FIRE' && 'F+'}
-                            {powerUp.type === 'SPEED' && 'S+'}
-                          </div>
-                        )}
-
-                        {explosionInCell && (
-                          <Explosion 
-                            x={x} 
-                            y={y} 
-                            range={activeExplosions.find(e => e.x === x && e.y === y)?.range || 1} 
-                          />
-                        )}
-
-                        {renderPowerUp(y, x)}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
-            </>
-          )}
-        </PowerUpManager>
-      </div>
-
-      <div className="game-controls">
-        <p>Controles: Flechas o WASD para mover, Espacio para bombas</p>
-        <p className="player-info">
-          Jugador: <span className="player-name">{currentPlayer?.name || currentPlayerId}</span>
-        </p>
-        <div className="power-up-legend">
-          <div className="legend-item">
-            <span className="power-up-icon bomb">B+</span> = Más bombas
-          </div>
-          <div className="legend-item">
-            <span className="power-up-icon fire">F+</span> = Mayor rango
-          </div>
-          <div className="legend-item">
-            <span className="power-up-icon speed">S+</span> = Más velocidad
-          </div>
-          <div className="legend-item">
-            <span className="power-up-icon life">❤️</span> = Vida extra
+          <div className="player-range">
+            Rango: {currentPlayer.bombRange}
           </div>
         </div>
-      </div>
-
-      {gameResult.show && (
-        <GameOverCard 
-          message={gameResult.message}
-          players={gameResult.players}
-          onClose={() => {
-            setGameResult({show: false, message: ''});
-          }}
-        />
       )}
     </div>
-  );
-};
+    
+    <div 
+      className="game-map"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${displayMap.width}, 32px)`,
+        gridTemplateRows: `repeat(${displayMap.height}, 32px)`,
+        gap: '2px',
+        backgroundColor: '#111',
+        padding: '10px',
+        borderRadius: '8px'
+      }}
+    >
+      <PowerUpManager
+        boardSize={displayMap.width}
+        playerPosition={{
+          row: currentPlayer?.y || 0,
+          col: currentPlayer?.x || 0
+        }}
+        maxLives={displayConfig.lives}
+        currentLives={playerLives}
+        onCollect={() => {
+          if (currentPlayerId) {
+            sendMessage(`/app/game/${roomCode}/collectLife`, {
+              playerId: currentPlayerId
+            });
+          }
+        }}
+        gameMap={displayMap.cells}
+      >
+        {(renderPowerUp) => (
+          <>
+            {displayMap.cells.map((row, y) => (
+              <React.Fragment key={`row-${y}`}>
+                {row.map((cell, x) => {
+                  const cellType = cell?.isWall 
+                    ? cell?.isDestructible ? 'destructible' : 'wall' 
+                    : 'empty';
+                  
+                  const player = gameState.players.find(p => p.x === x && p.y === y);
+                  const bomb = bombs.find(b => b.x === x && b.y === y);
+                  const explosion = explosions.find(e => e.x === x && e.y === y);
+                  const powerUp = localPowerUps.find(pu => pu.x === x && pu.y === y);
+                  
+                  return (
+                    <div 
+                      key={`cell-${x}-${y}`} 
+                      className={`game-cell ${cellType} ${
+                        explosion ? 'explosion' : ''
+                      } ${
+                        explosion?.isCenter ? 'explosion-center' : explosion ? 'explosion-arm' : ''
+                      }`}
+                    >
+                      {player && gameState.players.some(p => p.id === player.id) && (
+                        <div className={`game-player player-${player.name} ${
+                          player.id === currentPlayerId ? 'current-player' : ''
+                        }`}>
+                          <img 
+                            src={getPlayerImage(player.name)} 
+                            alt={`Jugador ${player.name}`}
+                            className="player-avatar"
+                          />
+                          {player.id === currentPlayerId && (
+                            <div className="player-indicator"></div>
+                          )}
+                        </div>
+                      )}
+                      
+                      {bomb && !explosion && (
+                        <div className="game-bomb" />
+                      )}
+                      
+                      {powerUp && !bomb && !explosion && (
+                        <div className={`game-power-up ${powerUp.type.toLowerCase()}`}>
+                          {powerUp.type === 'BOMB' && 'B+'}
+                          {powerUp.type === 'FIRE' && 'F+'}
+                          {powerUp.type === 'SPEED' && 'S+'}
+                        </div>
+                      )}
 
-export default GamePage;
+                      {renderPowerUp(y, x)}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </>
+        )}
+      </PowerUpManager>
+    </div>
+
+    <div className="game-controls">
+      <p>Controles: Flechas o WASD para mover, Espacio para bombas</p>
+      <p className="player-info">
+        Jugador: <span className="player-name">{currentPlayer?.name || currentPlayerId}</span>
+      </p>
+      <div className="power-up-legend">
+        <div className="legend-item">
+          <span className="power-up-icon bomb">B+</span> = Más bombas
+        </div>
+        <div className="legend-item">
+          <span className="power-up-icon fire">F+</span> = Mayor rango
+        </div>
+        <div className="legend-item">
+          <span className="power-up-icon speed">S+</span> = Más velocidad
+        </div>
+        <div className="legend-item">
+          <span className="power-up-icon life">❤️</span> = Vida extra
+        </div>
+      </div>
+    </div>
+
+    {/* Game Over Card */}
+    {gameResult.show && (
+      <GameOverCard 
+        message={gameResult.message}
+        players={gameResult.players}
+        onClose={() => {
+          setGameResult({show: false, message: ''});
+        }}
+      />
+    )}
+  </div>
+);}
+
+  export default GamePage;
